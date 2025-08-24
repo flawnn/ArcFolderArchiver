@@ -1,17 +1,16 @@
 {
-  "name": "react-router-bun-hono-template",
+  "name": "arc-folder-archiver",
   "version": "v0.0.1",
   "private": true,
   "sideEffects": true,
   "type": "module",
-  "description": "A React Router v7 template using Bun, Hono and Vitest.",
-  "author": "José Pereira",
+  "description": "Arc Folder Archiver Tool",
+  "author": "Flawn",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jpcpereira93/react-router-bun-hono-template.git"
+    "url": "git+https://github.com/flawn/arc-folder-archiver"
   },
-  "homepage": "https://github.com/jpcpereira93/react-router-bun-hono-template#readme",
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "bunx --bun vite",
@@ -24,6 +23,7 @@
   "dependencies": {
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
+    "hono": "^4.7.5",
     "isbot": "^5.1.17",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -48,5 +48,9 @@
     "vite": "^5.4.11",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8"
-  }
+  },
+  "overrides": {
+    "hono": "^4.7.5"
+  },
+  "trustedDependencies": ["@biomejs/biome", "esbuild", "workerd"]
 }
