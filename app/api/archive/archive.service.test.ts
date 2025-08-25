@@ -67,9 +67,8 @@ describe("ArchiveService", () => {
       expect(findByUrlSpy).toHaveBeenCalledWith(validUrl);
       expect(extractDataSpy).not.toHaveBeenCalled(); // Should not fetch from external
       expect(createSpy).not.toHaveBeenCalled(); // Should not create new
-      // expect(result).toEqual(existingFolder);
-      // For skeleton implementation:
-      expect(result).toBeNull();
+
+      expect(result).toEqual(existingFolder);
     });
 
     it("should create new folder when URL does not exist (happy path - create)", async () => {
@@ -108,8 +107,8 @@ describe("ArchiveService", () => {
           folderData: extractedData,
         }),
       );
-      // For skeleton implementation:
-      expect(result).toBeNull();
+
+      expect(result).toEqual(newFolder);
     });
 
     it("should handle ArcClient errors gracefully", async () => {
@@ -216,9 +215,8 @@ describe("ArchiveService", () => {
 
       // Assert
       expect(deleteByIdSpy).toHaveBeenCalledWith(validId);
-      // expect(result).toBe(true);
-      // For skeleton implementation:
-      expect(result).toBe(false);
+
+      expect(result).toBe(true);
     });
 
     it("should return false when folder does not exist", async () => {

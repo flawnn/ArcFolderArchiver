@@ -1,12 +1,39 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { archiveRepository } from "./archive.repository";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { eq } from "drizzle-orm";
+import * as schema from "../../db/schema";
 
-// We'll mock the database for testing
-// In a real scenario, you'd use a test database or a database mocking library
+// 1. Create a comprehensive mock of the Drizzle db object and its fluent API
+const mockDb = {
+  select: mock().mockReturnThis(),
+  from: mock().mockReturnThis(),
+  where: mock().mockReturnThis(),
+  limit: mock().mockResolvedValue([]), // The end of a select chain
+  insert: mock().mockReturnThis(),
+  values: mock().mockReturnThis(),
+  returning: mock().mockResolvedValue([]), // The end of an insert chain
+  delete: mock().mockReturnThis(),
+  // Drizzle's delete in node-postgres returns a result object with rowCount
+  // We mock the promise resolution which is the end of the chain.
+  then: mock(),
+};
+
+// 2. Mock the entire module that exports the 'db' instance
+mock.module("../../db", () => ({
+  db: mockDb,
+}));
+
+// 3. Dynamically import the repository AFTER the mock is set up
+const { archiveRepository } = await import("./archive.repository");
 
 describe("ArchiveRepository", () => {
   beforeEach(() => {
-    // Setup test database state or reset mocks
+    // Reset the state of all mocks before each test
+    for (const key in mockDb) {
+      // @ts-ignore
+      mockDb[key].mockClear();
+    }
+    // Reset the `then` mock which is used for deletes
+    mockDb.then.mockClear();
   });
 
   afterEach(() => {
@@ -28,21 +55,25 @@ describe("ArchiveRepository", () => {
       };
 
       // TODO: When implementing, mock your Drizzle DB calls here
-      // const mockQuery = mock(() => Promise.resolve([expectedFolder]));
+      // Mock the final step of the chain to return our expected folder
+      mockDb.limit.mockResolvedValueOnce([expectedFolder]);
 
       // Act
       const result = await archiveRepository.findByUrl(validUrl);
 
       // Assert
-      expect(result).toBeDefined();
-      // expect(result).toEqual(expectedFolder);
-      // For now, since skeleton returns null:
-      expect(result).toBeNull();
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockDb.from).toHaveBeenCalledWith(schema.archivedFolders);
+      expect(mockDb.where).toHaveBeenCalledWith(
+        eq(schema.archivedFolders.arcId, validUrl),
+      );
+      expect(mockDb.limit).toHaveBeenCalledWith(1);
+      expect(result).toEqual(expectedFolder);
     });
 
     it("should return null when URL does not exist in database", async () => {
       // Arrange: Setup mock to return empty result
-      // TODO: Mock empty database result
+      mockDb.limit.mockResolvedValueOnce([]);
 
       // Act
       const result = await archiveRepository.findByUrl(nonExistentUrl);
@@ -84,14 +115,16 @@ describe("ArchiveRepository", () => {
       };
 
       // TODO: Mock database query
+      mockDb.limit.mockResolvedValueOnce([expectedFolder]);
 
       // Act
       const result = await archiveRepository.findById(validId);
 
       // Assert
-      expect(result).toBeDefined();
-      // For now, since skeleton returns null:
-      expect(result).toBeNull();
+      expect(mockDb.where).toHaveBeenCalledWith(
+        eq(schema.archivedFolders.id, validId),
+      );
+      expect(result).toEqual(expectedFolder);
     });
 
     it("should return null when ID does not exist", async () => {
@@ -118,18 +151,25 @@ describe("ArchiveRepository", () => {
     const nonExistentId = "folder-NONEXISTENT";
 
     it("should return true when folder exists and is deleted successfully", async () => {
-      // TODO: Mock successful deletion
+      // Mock a successful deletion (rowCount > 0)
+      // For node-postgres, the delete query resolves to a result object
+      mockDb.then.mockResolvedValueOnce({ rowCount: 1 });
 
       // Act
       const result = await archiveRepository.deleteById(validId);
 
       // Assert
-      // expect(result).toBe(true);
-      // For now, since skeleton returns false:
-      expect(result).toBe(false);
+      expect(mockDb.delete).toHaveBeenCalledWith(schema.archivedFolders);
+      expect(mockDb.where).toHaveBeenCalledWith(
+        eq(schema.archivedFolders.id, validId),
+      );
+      expect(result).toBe(true);
     });
 
     it("should return false when folder does not exist", async () => {
+      // Mock a failed deletion (rowCount === 0)
+      mockDb.then.mockResolvedValueOnce({ rowCount: 0 });
+
       // Act
       const result = await archiveRepository.deleteById(nonExistentId);
 
@@ -146,7 +186,9 @@ describe("ArchiveRepository", () => {
     });
 
     it("should handle database errors gracefully", async () => {
-      // TODO: Mock database error
+      // Mock the promise being rejected
+      mockDb.then.mockRejectedValueOnce(new Error("DB Connection Error"));
+
       // For now, test that it returns false on error
       const result = await archiveRepository.deleteById(validId);
       expect(result).toBe(false);
@@ -165,28 +207,29 @@ describe("ArchiveRepository", () => {
     };
 
     it("should create folder successfully and return the created folder", async () => {
-      // TODO: Mock successful database insertion
+      // Mock the 'returning' step to give back the created folder
+      mockDb.returning.mockResolvedValueOnce([validFolderData]);
 
       // Act
       const result = await archiveRepository.create(validFolderData);
 
       // Assert
-      // expect(result).toEqual(expect.objectContaining({
-      //   id: validFolderData.id,
-      //   arcUrl: validFolderData.arcUrl,
-      //   folderData: validFolderData.folderData
-      // }));
-      // For now, since skeleton returns null:
-      expect(result).toBeNull();
+      expect(mockDb.insert).toHaveBeenCalledWith(schema.archivedFolders);
+      expect(mockDb.values).toHaveBeenCalledWith(validFolderData);
+      expect(mockDb.returning).toHaveBeenCalled();
+      expect(result).toEqual(validFolderData);
     });
 
     it("should throw error when trying to create folder with duplicate URL", async () => {
-      // TODO: Mock database constraint violation
-      // This test should verify that the database's UNIQUE constraint on arc_url works
+      // Mock the database driver throwing a unique constraint violation error
+      mockDb.returning.mockRejectedValueOnce(
+        new Error("UNIQUE constraint failed"),
+      );
 
-      // For now, since we're using skeleton:
-      const result = await archiveRepository.create(validFolderData);
-      expect(result).toBeNull();
+      // This should fail until the method throws an error on duplicate entry.
+      await expect(archiveRepository.create(validFolderData)).rejects.toThrow(
+        "UNIQUE constraint failed",
+      );
     });
 
     it("should handle missing required fields", async () => {
@@ -196,9 +239,16 @@ describe("ArchiveRepository", () => {
         folderData: { name: "Test" },
       };
 
+      // This test is now more relevant for the service layer, which prepares the data.
+      // The repository should ideally receive valid data.
+      // If it receives invalid data, Drizzle/DB will throw an error.
+      mockDb.returning.mockRejectedValueOnce(
+        new Error("Missing required fields"),
+      );
+
       // Act & Assert
-      const result = await archiveRepository.create(incompleteData);
-      expect(result).toBeNull();
+      // This should fail until the method validates input and throws an error.
+      await expect(archiveRepository.create(incompleteData)).rejects.toThrow();
     });
 
     it("should validate field types and formats", async () => {
@@ -210,11 +260,14 @@ describe("ArchiveRepository", () => {
         deleteAt: "not-a-date", // Should be Date
       };
 
-      // Act
-      const result = await archiveRepository.create(invalidData);
+      // This is also better tested at the service/controller layer with Zod.
+      // The repository assumes it gets correctly typed data.
+      // We'll test that the repository throws if the DB rejects the data.
+      mockDb.returning.mockRejectedValueOnce(new Error("Invalid data type"));
 
       // Assert
-      expect(result).toBeNull();
+      // This should fail until the method validates input and throws an error.
+      await expect(archiveRepository.create(invalidData)).rejects.toThrow();
     });
 
     it("should handle very large folder data", async () => {
@@ -230,11 +283,14 @@ describe("ArchiveRepository", () => {
         },
       };
 
+      // Mock the successful creation of the large folder data
+      mockDb.returning.mockResolvedValueOnce([largeFolderData]);
+
       // Act
       const result = await archiveRepository.create(largeFolderData);
 
       // Assert
-      expect(result).toBeNull(); // For skeleton
+      expect(result).toEqual(largeFolderData);
     });
   });
 });

@@ -41,11 +41,18 @@ describe("ArcClient", () => {
         html: () =>
           `{"props":{"pageProps":{"folderData":{"name":"Test Folder","tabs":[{"url":"https://example.com","title":"Example"}]}}}}`,
       };
+      
       const mockCheerioSelector = mock(() => mockCheerioInstance);
-      const mockCheerioLoad = mock(() => mockCheerioSelector);
 
-      mockedAxios.mockResolvedValue({ data: mockHTML });
-      mockedCheerio.mockReturnValue(mockCheerioLoad);
+      mockedAxios.mockResolvedValue({
+        data: mockHTML,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as any);
+      // cheerio.load returns a function that can be called with a selector
+      mockedCheerio.mockReturnValue(mockCheerioSelector as any);
 
       // Act
       const result = await arcClient.extractFolderData(validArcUrl);
@@ -73,10 +80,15 @@ describe("ArcClient", () => {
       const mockHTML = `<html><body><p>No script tag here</p></body></html>`;
       const mockCheerioInstance = { html: () => null };
       const mockCheerioSelector = mock(() => mockCheerioInstance);
-      const mockCheerioLoad = mock(() => mockCheerioSelector);
 
-      mockedAxios.mockResolvedValue({ data: mockHTML });
-      mockedCheerio.mockReturnValue(mockCheerioLoad);
+      mockedAxios.mockResolvedValue({
+        data: mockHTML,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as any);
+      mockedCheerio.mockReturnValue(mockCheerioSelector as any);
 
       // Act & Assert
       await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
@@ -96,10 +108,15 @@ describe("ArcClient", () => {
 
       const mockCheerioInstance = { html: () => "{ invalid json content" };
       const mockCheerioSelector = mock(() => mockCheerioInstance);
-      const mockCheerioLoad = mock(() => mockCheerioSelector);
 
-      mockedAxios.mockResolvedValue({ data: mockHTML });
-      mockedCheerio.mockReturnValue(mockCheerioLoad);
+      mockedAxios.mockResolvedValue({
+        data: mockHTML,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as any);
+      mockedCheerio.mockReturnValue(mockCheerioSelector as any);
 
       // Act & Assert
       await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
@@ -121,10 +138,15 @@ describe("ArcClient", () => {
         html: () => `{"props":{"pageProps":{"wrongStructure":"data"}}}`,
       };
       const mockCheerioSelector = mock(() => mockCheerioInstance);
-      const mockCheerioLoad = mock(() => mockCheerioSelector);
 
-      mockedAxios.mockResolvedValue({ data: mockHTML });
-      mockedCheerio.mockReturnValue(mockCheerioLoad);
+      mockedAxios.mockResolvedValue({
+        data: mockHTML,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as any);
+      mockedCheerio.mockReturnValue(mockCheerioSelector as any);
 
       // Act & Assert
       await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
@@ -170,10 +192,15 @@ describe("ArcClient", () => {
           `{"props":{"pageProps":{"folderData":{"name":"Empty Folder","tabs":[]}}}}`,
       };
       const mockCheerioSelector = mock(() => mockCheerioInstance);
-      const mockCheerioLoad = mock(() => mockCheerioSelector);
 
-      mockedAxios.mockResolvedValue({ data: mockHTML });
-      mockedCheerio.mockReturnValue(mockCheerioLoad);
+      mockedAxios.mockResolvedValue({
+        data: mockHTML,
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      } as any);
+      mockedCheerio.mockReturnValue(mockCheerioSelector as any);
 
       // Act
       const result = await arcClient.extractFolderData(validArcUrl);
