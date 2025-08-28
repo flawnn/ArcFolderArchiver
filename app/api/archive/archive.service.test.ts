@@ -1,39 +1,42 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
-import { arcClient } from "../../external/arc.client";
-import { archiveRepository } from "./archive.repository";
-import { archiveService } from "./archive.service";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import type { ArcFolder } from "../../external/models/arc";
 
-// Mock the dependencies
-const mockRepository = {
-  findByUrl: mock(),
-  findById: mock(),
-  deleteById: mock(),
-  create: mock(),
-};
+// Mock the dependencies at module level for easy spying
+mock.module("../../external/arc.client", () => ({
+  arcClient: {
+    extractFolderData: mock(),
+  },
+}));
 
-const mockArcClient = {
-  extractFolderData: mock(),
-};
+mock.module("./archive.repository", () => ({
+  archiveRepository: {
+    findByArcId: mock(),
+    findById: mock(),
+    deleteById: mock(),
+    create: mock(),
+  },
+}));
 
-describe("ArchiveService", () => {
+// Import AFTER mocking
+const { arcClient } = await import("../../external/arc.client");
+const { archiveRepository } = await import("./archive.repository");
+const { archiveService } = await import("./archive.service");
+
+describe("ArchiveService - Mocked Dependencies", () => {
   beforeEach(() => {
     // Reset all mocks before each test
-    Object.values(mockRepository).forEach((mockFn) => mockFn.mockReset());
-    Object.values(mockArcClient).forEach((mockFn) => mockFn.mockReset());
+    Object.values(archiveRepository).forEach((mockFn: any) =>
+      mockFn.mockReset?.(),
+    );
+    Object.values(arcClient).forEach((mockFn: any) => mockFn.mockReset?.());
   });
 
   afterEach(() => {
-    // Restore mocks after each test
-    Object.values(mockRepository).forEach((mockFn) => mockFn.mockRestore?.());
-    Object.values(mockArcClient).forEach((mockFn) => mockFn.mockRestore?.());
+    // Clean up mocks after each test
+    Object.values(archiveRepository).forEach((mockFn: any) =>
+      mockFn.mockRestore?.(),
+    );
+    Object.values(arcClient).forEach((mockFn: any) => mockFn.mockRestore?.());
   });
 
   describe("getOrCreateFolder", () => {
@@ -44,18 +47,14 @@ describe("ArchiveService", () => {
       // Arrange: Mock existing folder in database
       const existingFolder = {
         id: "folder-123",
-        arcUrl: validUrl,
+        arcId: "123ABC",
         folderData: { name: "Existing Folder", tabs: [] },
         createdAt: new Date(),
         lastFetchedAt: new Date(),
       };
 
-      // Spy on repository methods to verify calls
-      const findByUrlSpy = spyOn(archiveRepository, "findByUrl");
-      const extractDataSpy = spyOn(arcClient, "extractFolderData");
-      const createSpy = spyOn(archiveRepository, "create");
-
-      findByUrlSpy.mockResolvedValue(existingFolder);
+      // Use the mocked methods directly (no spyOn needed with module mocks)
+      (archiveRepository.findByArcId as any).mockResolvedValue(existingFolder);
 
       // Act
       const result = await archiveService.getOrCreateFolder(
@@ -64,33 +63,54 @@ describe("ArchiveService", () => {
       );
 
       // Assert
-      expect(findByUrlSpy).toHaveBeenCalledWith(validUrl);
-      expect(extractDataSpy).not.toHaveBeenCalled(); // Should not fetch from external
-      expect(createSpy).not.toHaveBeenCalled(); // Should not create new
+      expect(archiveRepository.findByArcId).toHaveBeenCalledWith("123ABC"); // Extract ID from URL
+      expect(arcClient.extractFolderData).not.toHaveBeenCalled(); // Should not fetch from external
+      expect(archiveRepository.create).not.toHaveBeenCalled(); // Should not create new
 
       expect(result).toEqual(existingFolder);
     });
 
     it("should create new folder when URL does not exist (happy path - create)", async () => {
       // Arrange: Mock database returns null (no existing folder)
-      const extractedData = {
-        name: "New Folder",
-        tabs: [{ url: "https://example.com", title: "Example" }],
+      const extractedData: ArcFolder = {
+        data: {
+          items: [
+            {
+              id: "123e4567-e89b-12d3-a456-426614174000",
+              parentID: "123e4567-e89b-12d3-a456-426614174001",
+              childrenIds: [],
+              title: "Example Tab",
+              createdAt: 1640995200000,
+              data: {
+                tab: {
+                  timeLastActiveAt: 1640995200000,
+                  savedMuteStatus: "false",
+                  savedURL: "https://example.com",
+                  savedTitle: "Example",
+                },
+              },
+            },
+          ],
+          rootID: "123e4567-e89b-12d3-a456-426614174001",
+          root: "123e4567-e89b-12d3-a456-426614174001",
+        },
+        shareID: "123e4567-e89b-12d3-a456-426614174003",
+        author: "Test Author",
       };
-      const newFolder = {
-        id: expect.any(String),
-        arcUrl: validUrl,
-        folderData: extractedData,
-        deleteAt: expect.any(Date),
-      };
+      const newFolder = [
+        {
+          id: "new-folder-id",
+          arcId: "123ABC",
+          folderData: extractedData,
+          deleteAt: expect.any(Date),
+          createdAt: expect.any(Date),
+          lastFetchedAt: expect.any(Date),
+        },
+      ];
 
-      const findByUrlSpy = spyOn(archiveRepository, "findByUrl");
-      const extractDataSpy = spyOn(arcClient, "extractFolderData");
-      const createSpy = spyOn(archiveRepository, "create");
-
-      findByUrlSpy.mockResolvedValue(null); // No existing folder
-      extractDataSpy.mockResolvedValue(extractedData);
-      createSpy.mockResolvedValue(newFolder);
+      (archiveRepository.findByArcId as any).mockResolvedValue(null); // No existing folder
+      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (archiveRepository.create as any).mockResolvedValue(newFolder);
 
       // Act
       const result = await archiveService.getOrCreateFolder(
@@ -99,26 +119,24 @@ describe("ArchiveService", () => {
       );
 
       // Assert
-      expect(findByUrlSpy).toHaveBeenCalledWith(validUrl);
-      expect(extractDataSpy).toHaveBeenCalledWith(validUrl);
-      expect(createSpy).toHaveBeenCalledWith(
+      expect(archiveRepository.findByArcId).toHaveBeenCalledWith("123ABC");
+      expect(arcClient.extractFolderData).toHaveBeenCalledWith(validUrl);
+      expect(archiveRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          arcUrl: validUrl,
+          arcId: "123ABC",
           folderData: extractedData,
         }),
       );
 
-      expect(result).toEqual(newFolder);
+      expect(result).toEqual(newFolder[0]);
     });
 
     it("should handle ArcClient errors gracefully", async () => {
       // Arrange: Mock repository returns null, ArcClient throws error
-      const findByUrlSpy = spyOn(archiveRepository, "findByUrl");
-      const extractDataSpy = spyOn(arcClient, "extractFolderData");
-      const createSpy = spyOn(archiveRepository, "create");
-
-      findByUrlSpy.mockResolvedValue(null);
-      extractDataSpy.mockRejectedValue(new Error("Failed to fetch Arc data"));
+      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      (arcClient.extractFolderData as any).mockRejectedValue(
+        new Error("Failed to fetch Arc data"),
+      );
 
       // Act & Assert
       await expect(
@@ -126,20 +144,26 @@ describe("ArchiveService", () => {
       ).rejects.toThrow();
 
       // Verify that create was not called
-      expect(createSpy).not.toHaveBeenCalled();
+      expect(archiveRepository.create).not.toHaveBeenCalled();
     });
 
     it("should handle repository create errors gracefully", async () => {
       // Arrange: ArcClient succeeds, but repository create fails
-      const extractedData = { name: "New Folder", tabs: [] };
+      const extractedData: ArcFolder = {
+        data: {
+          items: [],
+          rootID: "123e4567-e89b-12d3-a456-426614174001",
+          root: "123e4567-e89b-12d3-a456-426614174001",
+        },
+        shareID: "123e4567-e89b-12d3-a456-426614174003",
+        author: "Test Author",
+      };
 
-      const findByUrlSpy = spyOn(archiveRepository, "findByUrl");
-      const extractDataSpy = spyOn(arcClient, "extractFolderData");
-      const createSpy = spyOn(archiveRepository, "create");
-
-      findByUrlSpy.mockResolvedValue(null);
-      extractDataSpy.mockResolvedValue(extractedData);
-      createSpy.mockRejectedValue(new Error("Database error"));
+      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (archiveRepository.create as any).mockRejectedValue(
+        new Error("Database error"),
+      );
 
       // Act & Assert
       await expect(
@@ -165,38 +189,57 @@ describe("ArchiveService", () => {
       ).rejects.toThrow();
     });
 
+    it("should handle null return from ArcClient", async () => {
+      // Arrange: ArcClient returns null (e.g., when folder is not found or malformed)
+      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      (arcClient.extractFolderData as any).mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        archiveService.getOrCreateFolder(validUrl, deleteInDays),
+      ).rejects.toThrow();
+
+      // Verify that create was not called
+      expect(archiveRepository.create).not.toHaveBeenCalled();
+    });
+
     it("should calculate correct deleteAt timestamp", async () => {
       // Arrange
-      const extractedData = { name: "Test Folder", tabs: [] };
+      const extractedData: ArcFolder = {
+        data: {
+          items: [],
+          rootID: "123e4567-e89b-12d3-a456-426614174001",
+          root: "123e4567-e89b-12d3-a456-426614174001",
+        },
+        shareID: "123e4567-e89b-12d3-a456-426614174003",
+        author: "Test Author",
+      };
       const currentTime = Date.now();
 
-      const findByUrlSpy = spyOn(archiveRepository, "findByUrl");
-      const extractDataSpy = spyOn(arcClient, "extractFolderData");
-      const createSpy = spyOn(archiveRepository, "create");
-
-      findByUrlSpy.mockResolvedValue(null);
-      extractDataSpy.mockResolvedValue(extractedData);
-      createSpy.mockResolvedValue({});
+      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (archiveRepository.create as any).mockResolvedValue([{}]);
 
       // Act
       await archiveService.getOrCreateFolder(validUrl, deleteInDays);
 
       // Assert
-      expect(createSpy).toHaveBeenCalledWith(
+      expect(archiveRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           deleteAt: expect.any(Date),
         }),
       );
 
       // Verify the deleteAt is approximately correct (within 1 minute)
-      if (createSpy.mock.calls.length > 0) {
-        const deleteAt = createSpy.mock.calls[0][0].deleteAt;
+      const createCall = (archiveRepository.create as any).mock.calls[0][0];
+      if (createCall?.deleteAt) {
+        const deleteAt = createCall.deleteAt;
         const expectedDeleteTime =
           currentTime + deleteInDays * 24 * 60 * 60 * 1000;
         const timeDifference = Math.abs(
           deleteAt.getTime() - expectedDeleteTime,
         );
-        expect(timeDifference).toBeLessThan(60000); // Within 1 minute
+        expect(timeDifference).toBeLessThan(60000);
       }
     });
   });
@@ -207,35 +250,33 @@ describe("ArchiveService", () => {
 
     it("should delete folder successfully when it exists", async () => {
       // Arrange
-      const deleteByIdSpy = spyOn(archiveRepository, "deleteById");
-      deleteByIdSpy.mockResolvedValue(true);
+      (archiveRepository.deleteById as any).mockResolvedValue(true);
 
       // Act
       const result = await archiveService.deleteFolder(validId);
 
       // Assert
-      expect(deleteByIdSpy).toHaveBeenCalledWith(validId);
-
+      expect(archiveRepository.deleteById).toHaveBeenCalledWith(validId);
       expect(result).toBe(true);
     });
 
     it("should return false when folder does not exist", async () => {
       // Arrange
-      const deleteByIdSpy = spyOn(archiveRepository, "deleteById");
-      deleteByIdSpy.mockResolvedValue(false);
+      (archiveRepository.deleteById as any).mockResolvedValue(false);
 
       // Act
       const result = await archiveService.deleteFolder(nonExistentId);
 
       // Assert
-      expect(deleteByIdSpy).toHaveBeenCalledWith(nonExistentId);
+      expect(archiveRepository.deleteById).toHaveBeenCalledWith(nonExistentId);
       expect(result).toBe(false);
     });
 
     it("should handle repository errors gracefully", async () => {
       // Arrange
-      const deleteByIdSpy = spyOn(archiveRepository, "deleteById");
-      deleteByIdSpy.mockRejectedValue(new Error("Database error"));
+      (archiveRepository.deleteById as any).mockRejectedValue(
+        new Error("Database error"),
+      );
 
       // Act & Assert
       await expect(archiveService.deleteFolder(validId)).rejects.toThrow();
