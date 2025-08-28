@@ -22,12 +22,16 @@
     "check": "biome check --write ."
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.7",
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
+    "axios": "^1.11.0",
+    "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
     "hono": "^4.7.5",
     "isbot": "^5.1.17",
+    "nanoid": "^5.1.5",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "react": "^18.3.1",
