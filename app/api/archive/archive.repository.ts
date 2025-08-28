@@ -18,7 +18,6 @@ class ArchiveRepository {
   }
 
   /**
-   * [AI] A shared wrapper for executing database queries with centralized error handling.
    * This ensures that all unexpected database errors are caught, logged, and then
    * re-thrown to be handled by a higher-level service (e.g., an API route handler).
    */
@@ -56,20 +55,12 @@ class ArchiveRepository {
   }
 
   async deleteById(id: string): Promise<boolean> {
-    // First, check if the record exists. This handles non-UUIDs gracefully
-    // and prevents an unnecessary delete query.
-    const existingRecord = await this.findById(id);
-    if (!existingRecord) {
-      return false;
-    }
-
-    await this._executeQuery(() =>
+    const result = await this._executeQuery(() =>
       this.database.delete(archivedFolders).where(eq(archivedFolders.id, id)),
     );
 
-    // Verify the record is actually gone for true idempotency
-    const recordAfterDelete = await this.findById(id);
-    return recordAfterDelete === null;
+    // Supports both PGLite and PG
+    return (result as any)?.rowCount > 0 || (result as any)?.changes > 0;
   }
 
   async create(folderData: NewArchivedFolder): Promise<ArchivedFolder[]> {
