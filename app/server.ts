@@ -14,7 +14,7 @@ app
 app.onError((err: Error | HTTPException, c: Context) => {
   console.log("=== Caught Error ===");
   if (err instanceof HTTPException) {
-    return c.text(err.message, err.status);
+    return err.getResponse();
   }
 
   console.error(err);
