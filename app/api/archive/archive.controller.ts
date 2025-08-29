@@ -1,40 +1,53 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import {
+  DELETEFolderRequestSchema,
+  DELETEFolderResponseSchema,
+  POSTFolderRequestSchema,
+  type POSTFolderResponse,
+} from "../models/archive";
+import { ArchiveService, archiveService } from "./archive.service";
 
 /**
  * Class that handles API Endpoint logic for /archive/
  */
 class ArchiveController {
-  async postFolder(c: Context) {
-    const body = await c.req.json();
-    const folderId = body.folderId;
+  private _archiveService: ArchiveService;
 
-    if (!folderId) {
-      throw new HTTPException(400, { message: "Folder ID is required" });
+  constructor(service: ArchiveService = archiveService) {
+    this._archiveService = service;
+  }
+
+  async postFolder(c: Context) {
+    const body = POSTFolderRequestSchema.safeParse(await c.req.json()).data;
+
+    if (!body) {
+      throw new HTTPException(400, { message: "Malformed Body" });
     }
 
-    // TODO: Implement logic
+    // Not relevant for now - we will just allow the user to delete a folder
+    // const deleteInDays = body.deleteInDays;
+
+    const internalUUID = await this._archiveService.getOrCreateFolder(
+      body.arcId,
+      body.deleteInDays,
+    );
 
     return c.json({
-      folderId,
-      message: "Folder retrieved successfully",
-    });
+      internalUUID: internalUUID,
+    } satisfies POSTFolderResponse);
   }
 
   async deleteFolder(c: Context) {
-    const body = await c.req.json();
-    const folderId = body.folderId;
+    const body = DELETEFolderRequestSchema.safeParse(await c.req.json()).data;
 
-    if (!folderId) {
-      throw new HTTPException(400, { message: "Folder ID is required" });
+    if (!body) {
+      throw new HTTPException(400, { message: "Malformed Body" });
     }
 
-    // TODO: Implement logic
+    const result = await this._archiveService.deleteFolder(body.arcId);
 
-    return c.json({
-      folderId,
-      message: "Folder retrieved successfully",
-    });
+    return c.json(DELETEFolderResponseSchema.parse(result));
   }
 }
 

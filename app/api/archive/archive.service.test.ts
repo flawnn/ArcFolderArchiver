@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import type { ArcFolder } from "../../external/models/arc";
+import { ArchiveService } from "./archive.service";
 
 // Mock the dependencies at module level for easy spying
 mock.module("../../external/arc.client", () => ({
@@ -8,36 +9,22 @@ mock.module("../../external/arc.client", () => ({
   },
 }));
 
+const mockRepository = {
+  findByArcId: mock(),
+  findById: mock(),
+  deleteById: mock(),
+  create: mock(),
+};
+
 mock.module("./archive.repository", () => ({
-  archiveRepository: {
-    findByArcId: mock(),
-    findById: mock(),
-    deleteById: mock(),
-    create: mock(),
-  },
+  ArchiveRepository: mock(() => mockRepository),
 }));
 
 // Import AFTER mocking
 const { arcClient } = await import("../../external/arc.client");
-const { archiveRepository } = await import("./archive.repository");
-const { archiveService } = await import("./archive.service");
 
 describe("ArchiveService - Mocked Dependencies", () => {
-  beforeEach(() => {
-    // Reset all mocks before each test
-    Object.values(archiveRepository).forEach((mockFn: any) =>
-      mockFn.mockReset?.(),
-    );
-    Object.values(arcClient).forEach((mockFn: any) => mockFn.mockReset?.());
-  });
-
-  afterEach(() => {
-    // Clean up mocks after each test
-    Object.values(archiveRepository).forEach((mockFn: any) =>
-      mockFn.mockRestore?.(),
-    );
-    Object.values(arcClient).forEach((mockFn: any) => mockFn.mockRestore?.());
-  });
+  const archiveService = new ArchiveService()
 
   describe("getOrCreateFolder", () => {
     const validUrl = "https://arc.net/folder/123ABC";
@@ -53,8 +40,8 @@ describe("ArchiveService - Mocked Dependencies", () => {
         lastFetchedAt: new Date(),
       };
 
-      // Use the mocked methods directly (no spyOn needed with module mocks)
-      (archiveRepository.findByArcId as any).mockResolvedValue(existingFolder);
+      // Use the mocked methods directly
+      mockRepository.findByArcId.mockResolvedValue(existingFolder);
 
       // Act
       const result = await archiveService.getOrCreateFolder(
@@ -63,9 +50,9 @@ describe("ArchiveService - Mocked Dependencies", () => {
       );
 
       // Assert
-      expect(archiveRepository.findByArcId).toHaveBeenCalledWith("123ABC"); // Extract ID from URL
+      expect(mockRepository.findByArcId).toHaveBeenCalledWith("123ABC"); // Extract ID from URL
       expect(arcClient.extractFolderData).not.toHaveBeenCalled(); // Should not fetch from external
-      expect(archiveRepository.create).not.toHaveBeenCalled(); // Should not create new
+      expect(mockRepository.create).not.toHaveBeenCalled(); // Should not create new
 
       expect(result).toEqual(existingFolder);
     });
@@ -108,9 +95,9 @@ describe("ArchiveService - Mocked Dependencies", () => {
         },
       ];
 
-      (archiveRepository.findByArcId as any).mockResolvedValue(null); // No existing folder
+      mockRepository.findByArcId.mockResolvedValue(null); // No existing folder
       (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
-      (archiveRepository.create as any).mockResolvedValue(newFolder);
+      mockRepository.create.mockResolvedValue(newFolder);
 
       // Act
       const result = await archiveService.getOrCreateFolder(
@@ -119,9 +106,9 @@ describe("ArchiveService - Mocked Dependencies", () => {
       );
 
       // Assert
-      expect(archiveRepository.findByArcId).toHaveBeenCalledWith("123ABC");
+      expect(mockRepository.findByArcId).toHaveBeenCalledWith("123ABC");
       expect(arcClient.extractFolderData).toHaveBeenCalledWith(validUrl);
-      expect(archiveRepository.create).toHaveBeenCalledWith(
+      expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           arcId: "123ABC",
           folderData: extractedData,
@@ -133,7 +120,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
     it("should handle ArcClient errors gracefully", async () => {
       // Arrange: Mock repository returns null, ArcClient throws error
-      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockRejectedValue(
         new Error("Failed to fetch Arc data"),
       );
@@ -144,7 +131,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       ).rejects.toThrow();
 
       // Verify that create was not called
-      expect(archiveRepository.create).not.toHaveBeenCalled();
+      expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
     it("should handle repository create errors gracefully", async () => {
@@ -159,11 +146,9 @@ describe("ArchiveService - Mocked Dependencies", () => {
         author: "Test Author",
       };
 
-      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
-      (archiveRepository.create as any).mockRejectedValue(
-        new Error("Database error"),
-      );
+      mockRepository.create.mockRejectedValue(new Error("Database error"));
 
       // Act & Assert
       await expect(
@@ -191,7 +176,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
     it("should handle null return from ArcClient", async () => {
       // Arrange: ArcClient returns null (e.g., when folder is not found or malformed)
-      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockResolvedValue(null);
 
       // Act & Assert
@@ -200,7 +185,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       ).rejects.toThrow();
 
       // Verify that create was not called
-      expect(archiveRepository.create).not.toHaveBeenCalled();
+      expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
     it("should calculate correct deleteAt timestamp", async () => {
@@ -216,22 +201,22 @@ describe("ArchiveService - Mocked Dependencies", () => {
       };
       const currentTime = Date.now();
 
-      (archiveRepository.findByArcId as any).mockResolvedValue(null);
+      mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
-      (archiveRepository.create as any).mockResolvedValue([{}]);
+      mockRepository.create.mockResolvedValue([{}]);
 
       // Act
       await archiveService.getOrCreateFolder(validUrl, deleteInDays);
 
       // Assert
-      expect(archiveRepository.create).toHaveBeenCalledWith(
+      expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           deleteAt: expect.any(Date),
         }),
       );
 
       // Verify the deleteAt is approximately correct (within 1 minute)
-      const createCall = (archiveRepository.create as any).mock.calls[0][0];
+      const createCall = mockRepository.create.mock.calls[0][0];
       if (createCall?.deleteAt) {
         const deleteAt = createCall.deleteAt;
         const expectedDeleteTime =
@@ -250,33 +235,31 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
     it("should delete folder successfully when it exists", async () => {
       // Arrange
-      (archiveRepository.deleteById as any).mockResolvedValue(true);
+      mockRepository.deleteById.mockResolvedValue(true);
 
       // Act
       const result = await archiveService.deleteFolder(validId);
 
       // Assert
-      expect(archiveRepository.deleteById).toHaveBeenCalledWith(validId);
+      expect(mockRepository.deleteById).toHaveBeenCalledWith(validId);
       expect(result).toBe(true);
     });
 
     it("should return false when folder does not exist", async () => {
       // Arrange
-      (archiveRepository.deleteById as any).mockResolvedValue(false);
+      mockRepository.deleteById.mockResolvedValue(false);
 
       // Act
       const result = await archiveService.deleteFolder(nonExistentId);
 
       // Assert
-      expect(archiveRepository.deleteById).toHaveBeenCalledWith(nonExistentId);
+      expect(mockRepository.deleteById).toHaveBeenCalledWith(nonExistentId);
       expect(result).toBe(false);
     });
 
     it("should handle repository errors gracefully", async () => {
       // Arrange
-      (archiveRepository.deleteById as any).mockRejectedValue(
-        new Error("Database error"),
-      );
+      mockRepository.deleteById.mockRejectedValue(new Error("Database error"));
 
       // Act & Assert
       await expect(archiveService.deleteFolder(validId)).rejects.toThrow();

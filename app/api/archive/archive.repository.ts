@@ -71,4 +71,3 @@ class ArchiveRepository {
 }
 
 export { ArchiveRepository };
-export const archiveRepository = new ArchiveRepository();
