@@ -3,12 +3,11 @@ import * as cheerio from "cheerio";
 import { type ArcFolder, ArcFolderSchema } from "./models/arc";
 
 class ArcClient {
-  async extractFolderData(url: string): Promise<ArcFolder | null> {
+  async extractFolderData(arcId: string): Promise<ArcFolder | null> {
     try {
-      // Check if Arc URL
-      this.checkArcUrl(url);
+      const arcFolderURL = `https://arc.net/folder/${arcId}`;
 
-      const response = await axios.get(url);
+      const response = await axios.get(arcFolderURL);
 
       const doc = cheerio.load(response.data);
 
@@ -31,20 +30,6 @@ class ArcClient {
         console.error("Error fetching HTML:", error.message);
       } else {
         console.error("Error fetching HTML:", error);
-      }
-      throw error;
-    }
-  }
-
-  private checkArcUrl(url: string) {
-    try {
-      const parsedUrl = new URL(url);
-      if (parsedUrl.hostname !== "arc.net") {
-        throw new Error("URL must be from arc.net domain");
-      }
-    } catch (error) {
-      if (error instanceof TypeError) {
-        throw new Error("Invalid URL format");
       }
       throw error;
     }

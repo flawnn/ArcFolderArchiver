@@ -45,11 +45,11 @@ describe("ArcClient", () => {
   });
 
   describe("extractFolderData", () => {
-    const validArcUrl = "https://arc.net/folder/123ABC";
-    const invalidUrl = "not-a-url";
-    const nonArcUrl = "https://google.com";
+    const validArcId = "123ABC";
+    const invalidId = "not-a-url";
+    const nonArcId = "https://google.com";
 
-    it("should extract JSON correctly with valid Arc URL and well-formed data", async () => {
+    it("should extract JSON correctly with valid Arc ID and well-formed data", async () => {
       // Arrange: Mock successful HTTP response with valid HTML containing JSON
       const mockArcData: ArcFolder = {
         data: {
@@ -105,21 +105,21 @@ describe("ArcClient", () => {
       mockCheerioLoad.mockReturnValue(mockCheerioSelector);
 
       // Act
-      const result = await arcClient.extractFolderData(validArcUrl);
+      const result = await arcClient.extractFolderData(validArcId);
 
       // Assert
-      expect(mockAxiosGet).toHaveBeenCalledWith(validArcUrl);
+      expect(mockAxiosGet).toHaveBeenCalledWith(validArcId);
       expect(result).toEqual(mockArcData);
     });
 
-    it("should throw error with invalid URL format", async () => {
+    it("should throw error with invalid ID format", async () => {
       // Act & Assert
-      await expect(arcClient.extractFolderData(invalidUrl)).rejects.toThrow();
+      await expect(arcClient.extractFolderData(invalidId)).rejects.toThrow();
     });
 
-    it("should throw error with non-Arc URL", async () => {
+    it("should throw error with non-Arc ID", async () => {
       // Act & Assert
-      await expect(arcClient.extractFolderData(nonArcUrl)).rejects.toThrow();
+      await expect(arcClient.extractFolderData(nonArcId)).rejects.toThrow();
     });
 
     it("should throw error when HTML document is malformed or missing script tag", async () => {
@@ -138,7 +138,7 @@ describe("ArcClient", () => {
       mockCheerioLoad.mockReturnValue(mockCheerioSelector);
 
       // Act & Assert
-      await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
+      await expect(arcClient.extractFolderData(validArcId)).rejects.toThrow();
     });
 
     it("should throw error when JSON in script tag is malformed", async () => {
@@ -166,7 +166,7 @@ describe("ArcClient", () => {
       mockCheerioLoad.mockReturnValue(mockCheerioSelector);
 
       // Act & Assert
-      await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
+      await expect(arcClient.extractFolderData(validArcId)).rejects.toThrow();
     });
 
     it("should throw error when JSON structure is unexpected (missing folder data path)", async () => {
@@ -196,7 +196,7 @@ describe("ArcClient", () => {
       mockCheerioLoad.mockReturnValue(mockCheerioSelector);
 
       // Act & Assert
-      await expect(arcClient.extractFolderData(validArcUrl)).rejects.toThrow();
+      await expect(arcClient.extractFolderData(validArcId)).rejects.toThrow();
     });
 
     it("should throw error on connection issues (timeout, DNS, 404, 500)", async () => {
@@ -214,7 +214,7 @@ describe("ArcClient", () => {
 
         // Act & Assert
         await expect(
-          arcClient.extractFolderData(validArcUrl),
+          arcClient.extractFolderData(validArcId),
         ).rejects.toThrow();
 
         // Reset for next iteration
@@ -260,7 +260,7 @@ describe("ArcClient", () => {
       mockCheerioLoad.mockReturnValue(mockCheerioSelector);
 
       // Act
-      const result = await arcClient.extractFolderData(validArcUrl);
+      const result = await arcClient.extractFolderData(validArcId);
 
       // Assert
       expect(result).toEqual(mockEmptyArcData);
@@ -276,13 +276,12 @@ describe("ArcClient", () => {
         mockCheerioLoad.mockRestore();
       });
 
-      it("should extract real folder data from live Arc URL", async () => {
-        // Arrange: Use real Arc URL without mocks
-        const realArcUrl =
-          "https://arc.net/folder/353E959D-51B9-439E-931A-6579C529306D";
+      it("should extract real folder data from live Arc ID", async () => {
+        // Arrange: Use real Arc ID without mocks
+        const realArcId = "353E959D-51B9-439E-931A-6579C529306D";
 
         // Act
-        const result = await arcClient.extractFolderData(realArcUrl);
+        const result = await arcClient.extractFolderData(realArcId);
 
         // Assert
         expect(result).toBeDefined();
