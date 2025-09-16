@@ -55,12 +55,12 @@ class ArchiveRepository {
   }
 
   async deleteById(id: string): Promise<boolean> {
-    const result = await this._executeQuery(() =>
-      this.database.delete(archivedFolders).where(eq(archivedFolders.id, id)),
+    const result = await this._executeQuery(async () =>
+      await this.database.delete(archivedFolders).where(eq(archivedFolders.id, id))
     );
 
     // Supports both PGLite and PG
-    return (result as any)?.rowCount > 0 || (result as any)?.changes > 0;
+    return (result as any) > 0 || (result as any)?.affectedRows > 0;
   }
 
   async create(folderData: NewArchivedFolder): Promise<ArchivedFolder[]> {

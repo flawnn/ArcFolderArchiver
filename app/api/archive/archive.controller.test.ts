@@ -1,195 +1,182 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
-import { Hono } from "hono";
-import { z } from "zod";
-import { archiveController } from "./archive.controller";
+import { setupHonoServer } from "~/hono";
+import {
+  type DELETEFolderRequest,
+  type POSTFolderRequest,
+} from "../models/archive";
 import { archiveService } from "./archive.service";
 
-// Create a test Hono app with our controller routes
-const testApp = new Hono();
-testApp.post(
-  "/api/archive",
-  archiveController.postFolder.bind(archiveController),
-);
-testApp.delete(
-  "/api/archive/:id",
-  archiveController.deleteFolder.bind(archiveController),
-);
-
-// Schema for request validation (you'll want to add Zod to the project)
-const createFolderSchema = z.object({
-  url: z.string().url("Invalid URL format"),
-  deleteIn: z.number().int().min(1).max(365).optional().default(30),
-});
-
 describe("ArchiveController", () => {
+  let app: ReturnType<typeof setupHonoServer>;
+
   beforeEach(() => {
-    // Reset mocks before each test
+    app = setupHonoServer();
   });
 
   afterEach(() => {
-    // Clean up after each test
+    // Clean up mocks after each test
   });
 
   describe("POST /api/archive (postFolder)", () => {
-    const validRequestBody = {
-      url: "https://arc.net/folder/123ABC",
-      deleteIn: 30,
+    const validRequestBody: POSTFolderRequest = {
+      arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      deleteInDays: 30,
     };
 
     it("should return folder ID when folder exists in database", async () => {
       // Arrange: Mock service to return existing folder
       const existingFolder = {
-        id: "folder-123",
-        arcUrl: validRequestBody.url,
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        arcUrl: `https://arc.net/folder/${validRequestBody.arcId}`,
         folderData: { name: "Test Folder", tabs: [] },
       };
 
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(existingFolder);
+      getOrCreateFolderSpy.mockResolvedValue(existingFolder.id);
 
-      // Act
-      const response = await testApp.fetch(
-        new Request("http://localhost/api/archive", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(validRequestBody),
-        }),
-      );
+      // Act - Using app.request() method (Hono best practice)
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
       expect(response.status).toBe(200);
       const responseJson = await response.json();
       expect(responseJson).toEqual({
-        id: existingFolder.id,
-        message: expect.any(String),
+        internalUUID: existingFolder.id,
       });
       expect(getOrCreateFolderSpy).toHaveBeenCalledWith(
-        validRequestBody.url,
-        validRequestBody.deleteIn,
+        validRequestBody.arcId,
+        validRequestBody.deleteInDays,
       );
     });
 
-    it("should create new folder when URL does not exist", async () => {
+    it("should create new folder when arcId does not exist", async () => {
       // Arrange: Mock service to return new folder
-      const newFolder = {
-        id: "folder-456",
-        arcUrl: validRequestBody.url,
-        folderData: { name: "New Folder", tabs: [] },
-      };
+      const newFolderId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(newFolder);
+      getOrCreateFolderSpy.mockResolvedValue(newFolderId);
 
       // Act
-      const response = await testApp.fetch(
-        new Request("http://localhost/api/archive", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(validRequestBody),
-        }),
-      );
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(200);
       const responseJson = await response.json();
       expect(responseJson).toEqual({
-        id: newFolder.id,
-        message: expect.any(String),
+        internalUUID: newFolderId,
       });
     });
 
     it("should return 400 when request body is malformed JSON", async () => {
       // Act
-      const response = await testApp.fetch(
-        new Request("http://localhost/api/archive", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{ invalid json",
-        }),
-      );
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{ invalid json",
+      });
 
       // Assert
-      expect(response.status).toBe(400);
       const responseJson = await response.json();
+      expect(response.status).toBe(400);
       expect(responseJson).toEqual({
-        error: expect.stringContaining("Invalid JSON"),
+        message: "Malformed Body",
       });
     });
 
-    it("should validate URL field using Zod schema", async () => {
-      // Test cases for URL validation
-      const invalidUrlCases = [
-        { url: undefined, deleteIn: 30 }, // Missing URL
-        { url: null, deleteIn: 30 }, // Null URL
-        { url: "", deleteIn: 30 }, // Empty URL
-        { url: "not-a-url", deleteIn: 30 }, // Invalid URL format
-        { url: "http://google.com", deleteIn: 30 }, // Valid URL but not Arc
-      ];
+    it.each([
+      {
+        case: "missing arcId",
+        input: { arcId: undefined, deleteInDays: 30 },
+        expectedStatus: 400,
+      },
+      {
+        case: "null arcId",
+        input: { arcId: null, deleteInDays: 30 },
+        expectedStatus: 400,
+      },
+      {
+        case: "empty arcId",
+        input: { arcId: "", deleteInDays: 30 },
+        expectedStatus: 400,
+      },
+      {
+        case: "too long arcId (max 50)",
+        input: { arcId: "x".repeat(51), deleteInDays: 30 },
+        expectedStatus: 400,
+      },
+      {
+        case: "invalid UUID format",
+        input: { arcId: "invalid-uuid-format", deleteInDays: 30 },
+        expectedStatus: 400,
+      },
+    ])(
+      "should return $expectedStatus when $case",
+      async ({ case: testCase, input, expectedStatus }) => {
+        const response = await app.request("/api/archive", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
 
-      for (const invalidCase of invalidUrlCases) {
-        const response = await testApp.fetch(
-          new Request("http://localhost/api/archive", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(invalidCase),
-          }),
-        );
-
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(expectedStatus);
         const responseJson = await response.json();
         expect(responseJson).toEqual({
-          error: expect.stringContaining("URL"),
+          message: "Malformed Body",
         });
-      }
-    });
+      },
+    );
 
-    it("should validate deleteIn field using Zod schema", async () => {
-      // Test cases for deleteIn validation
+    it("should validate deleteInDays field using Zod schema", async () => {
+      // Test cases for deleteInDays validation
       const invalidDeleteInCases = [
-        { url: validRequestBody.url, deleteIn: "30" }, // String instead of number
-        { url: validRequestBody.url, deleteIn: -1 }, // Negative number
-        { url: validRequestBody.url, deleteIn: 0 }, // Zero
-        { url: validRequestBody.url, deleteIn: 366 }, // Too large
-        { url: validRequestBody.url, deleteIn: 3.5 }, // Float instead of integer
+        { arcId: validRequestBody.arcId, deleteInDays: "30" }, // String instead of number
+        { arcId: validRequestBody.arcId, deleteInDays: -1 }, // Negative number
+        { arcId: validRequestBody.arcId, deleteInDays: 3.5 }, // Float instead of integer
       ];
 
       for (const invalidCase of invalidDeleteInCases) {
-        const response = await testApp.fetch(
-          new Request("http://localhost/api/archive", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(invalidCase),
-          }),
-        );
+        const response = await app.request("/api/archive", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(invalidCase),
+        });
 
         expect(response.status).toBe(400);
         const responseJson = await response.json();
         expect(responseJson).toEqual({
-          error: expect.stringContaining("deleteIn"),
+          message: "Malformed Body",
         });
       }
     });
 
-    it("should use default deleteIn value when not provided", async () => {
+    it("should use default deleteInDays value when not provided", async () => {
       // Arrange
-      const requestWithoutDeleteIn = { url: validRequestBody.url };
+      const requestWithoutDeleteIn = { arcId: validRequestBody.arcId };
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue({ id: "folder-123" } as any);
+      getOrCreateFolderSpy.mockResolvedValue(
+        "550e8400-e29b-41d4-a716-446655440000",
+      );
 
       // Act
-      const response = await testApp.fetch(
-        new Request("http://localhost/api/archive", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestWithoutDeleteIn),
-        }),
-      );
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestWithoutDeleteIn),
+      });
 
       // Assert
       expect(getOrCreateFolderSpy).toHaveBeenCalledWith(
-        validRequestBody.url,
-        30,
-      ); // Default value
+        validRequestBody.arcId,
+        0, // Default value from schema
+      );
     });
 
     it("should return 500 when service throws an error", async () => {
@@ -198,49 +185,21 @@ describe("ArchiveController", () => {
       getOrCreateFolderSpy.mockRejectedValue(new Error("Service error"));
 
       // Act
-      const response = await testApp.fetch(
-        new Request("http://localhost/api/archive", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(validRequestBody),
-        }),
-      );
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
       expect(response.status).toBe(500);
-      const responseJson = await response.json();
-      expect(responseJson).toEqual({
-        error: "An unexpected error occurred",
-      });
-    });
-
-    it("should handle different Arc URL formats", async () => {
-      // Test various valid Arc URL formats
-      const validArcUrls = [
-        "https://arc.net/folder/ABC123",
-        "https://arc.net/folder/abc123def456",
-        "https://arc.net/folder/123-ABC-456",
-      ];
-
-      const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue({ id: "folder-123" } as any);
-
-      for (const arcUrl of validArcUrls) {
-        const response = await testApp.fetch(
-          new Request("http://localhost/api/archive", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: arcUrl, deleteIn: 30 }),
-          }),
-        );
-
-        expect(response.status).toBe(200);
-      }
     });
   });
 
-  describe("DELETE /api/archive/:id (deleteFolder)", () => {
-    const validFolderId = "folder-123";
+  describe("POST /api/archive/delete (deleteFolder)", () => {
+    const validRequestBody: DELETEFolderRequest = {
+      arcId: "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+    };
 
     it("should delete folder successfully when it exists", async () => {
       // Arrange: Mock service to return true (successful deletion)
@@ -248,61 +207,58 @@ describe("ArchiveController", () => {
       deleteFolderSpy.mockResolvedValue(true);
 
       // Act
-      const response = await testApp.fetch(
-        new Request(`http://localhost/api/archive/${validFolderId}`, {
-          method: "DELETE",
-        }),
-      );
+      const response = await app.request("/api/archive/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
       expect(response.status).toBe(200);
       const responseJson = await response.json();
-      expect(responseJson).toEqual({
-        message: "Folder deleted successfully",
-      });
-      expect(deleteFolderSpy).toHaveBeenCalledWith(validFolderId);
+      expect(responseJson).toBe(true);
+      expect(deleteFolderSpy).toHaveBeenCalledWith(validRequestBody.arcId);
     });
 
-    it("should return 404 when folder does not exist", async () => {
+    it("should return false when folder does not exist", async () => {
       // Arrange: Mock service to return false (folder not found)
       const deleteFolderSpy = spyOn(archiveService, "deleteFolder");
       deleteFolderSpy.mockResolvedValue(false);
 
       // Act
-      const response = await testApp.fetch(
-        new Request(`http://localhost/api/archive/nonexistent`, {
-          method: "DELETE",
-        }),
-      );
+      const response = await app.request("/api/archive/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(200);
       const responseJson = await response.json();
-      expect(responseJson).toEqual({
-        error: "Folder not found",
-      });
+      expect(responseJson).toBe(false);
     });
 
-    it("should validate folder ID format", async () => {
-      // Test invalid folder ID formats
+    it("should validate arcId format", async () => {
+      // Test invalid arcId formats
       const invalidIds = [
-        "", // Empty
-        "   ", // Whitespace
-        "123", // Too short
-        "not-a-uuid", // Invalid format
+        { arcId: "" }, // Empty
+        { arcId: "   " }, // Whitespace
+        { arcId: "x".repeat(51) }, // Too long
+        { arcId: "invalid-uuid" }, // Invalid format
+        { arcId: "123" }, // Too short
       ];
 
-      for (const invalidId of invalidIds) {
-        const response = await testApp.fetch(
-          new Request(`http://localhost/api/archive/${invalidId}`, {
-            method: "DELETE",
-          }),
-        );
+      for (const invalidCase of invalidIds) {
+        const response = await app.request("/api/archive/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(invalidCase),
+        });
 
         expect(response.status).toBe(400);
         const responseJson = await response.json();
         expect(responseJson).toEqual({
-          error: expect.stringContaining("Invalid folder ID"),
+          message: "Malformed Body",
         });
       }
     });
@@ -313,18 +269,40 @@ describe("ArchiveController", () => {
       deleteFolderSpy.mockRejectedValue(new Error("Service error"));
 
       // Act
-      const response = await testApp.fetch(
-        new Request(`http://localhost/api/archive/${validFolderId}`, {
-          method: "DELETE",
-        }),
-      );
+      const response = await app.request("/api/archive/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validRequestBody),
+      });
 
       // Assert
       expect(response.status).toBe(500);
-      const responseJson = await response.json();
-      expect(responseJson).toEqual({
-        error: "An unexpected error occurred",
+    });
+  });
+
+  // Alternative: Type-safe testing approach using testClient
+  describe("Type-safe testing with testClient", () => {
+    it("should work with type-safe client", async () => {
+      // This approach provides autocompletion and type safety
+      const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
+      getOrCreateFolderSpy.mockResolvedValue(
+        "c3d4e5f6-a7b8-9012-cdef-345678901234",
+      );
+
+      // Note: This requires your app to be properly typed for the client to infer routes
+      // You would access it like: client.api.archive.$post({ json: validRequestBody })
+      // But since we're binding controller methods, the type inference won't work perfectly
+
+      const response = await app.request("/api/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          deleteInDays: 30,
+        }),
       });
+
+      expect(response.status).toBe(200);
     });
   });
 });

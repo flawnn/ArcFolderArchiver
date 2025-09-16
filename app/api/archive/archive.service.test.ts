@@ -24,17 +24,17 @@ mock.module("./archive.repository", () => ({
 const { arcClient } = await import("../../external/arc.client");
 
 describe("ArchiveService - Mocked Dependencies", () => {
-  const archiveService = new ArchiveService()
+  const archiveService = new ArchiveService();
 
   describe("getOrCreateFolder", () => {
-    const validUrl = "https://arc.net/folder/123ABC";
+    const validUrl = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
     const deleteInDays = 30;
 
     it("should return existing folder when URL already exists in database (happy path - get)", async () => {
       // Arrange: Mock existing folder in database
       const existingFolder = {
-        id: "folder-123",
-        arcId: "123ABC",
+        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+        arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         folderData: { name: "Existing Folder", tabs: [] },
         createdAt: new Date(),
         lastFetchedAt: new Date(),
@@ -50,7 +50,9 @@ describe("ArchiveService - Mocked Dependencies", () => {
       );
 
       // Assert
-      expect(mockRepository.findByArcId).toHaveBeenCalledWith("123ABC"); // Extract ID from URL
+      expect(mockRepository.findByArcId).toHaveBeenCalledWith(
+        "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      ); // Extract ID from URL
       expect(arcClient.extractFolderData).not.toHaveBeenCalled(); // Should not fetch from external
       expect(mockRepository.create).not.toHaveBeenCalled(); // Should not create new
 
@@ -87,7 +89,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       const newFolder = [
         {
           id: "new-folder-id",
-          arcId: "123ABC",
+          arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           folderData: extractedData,
           deleteAt: expect.any(Date),
           createdAt: expect.any(Date),
@@ -106,11 +108,13 @@ describe("ArchiveService - Mocked Dependencies", () => {
       );
 
       // Assert
-      expect(mockRepository.findByArcId).toHaveBeenCalledWith("123ABC");
+      expect(mockRepository.findByArcId).toHaveBeenCalledWith(
+        "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      );
       expect(arcClient.extractFolderData).toHaveBeenCalledWith(validUrl);
       expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          arcId: "123ABC",
+          arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           folderData: extractedData,
         }),
       );
@@ -119,6 +123,8 @@ describe("ArchiveService - Mocked Dependencies", () => {
     });
 
     it("should handle ArcClient errors gracefully", async () => {
+      mockRepository.create.mockReset()
+
       // Arrange: Mock repository returns null, ArcClient throws error
       mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockRejectedValue(
@@ -175,6 +181,8 @@ describe("ArchiveService - Mocked Dependencies", () => {
     });
 
     it("should handle null return from ArcClient", async () => {
+      mockRepository.create.mockReset()
+
       // Arrange: ArcClient returns null (e.g., when folder is not found or malformed)
       mockRepository.findByArcId.mockResolvedValue(null);
       (arcClient.extractFolderData as any).mockResolvedValue(null);
@@ -230,8 +238,8 @@ describe("ArchiveService - Mocked Dependencies", () => {
   });
 
   describe("deleteFolder", () => {
-    const validId = "folder-123";
-    const nonExistentId = "folder-NONEXISTENT";
+    const validId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+    const nonExistentId = "9f8e7d6c-5b4a-3928-1716-050392817465";
 
     it("should delete folder successfully when it exists", async () => {
       // Arrange

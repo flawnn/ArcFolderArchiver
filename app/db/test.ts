@@ -4,7 +4,6 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "./schema";
 
-
 /**
  * Creates a fresh in-memory PostgreSQL database for testing
  * Uses PGLite (WASM-compiled Postgres) for fast, isolated tests
@@ -31,7 +30,7 @@ export async function createTestData(db: ReturnType<typeof drizzle>) {
   const existingFolder = await db
     .insert(schema.archivedFolders)
     .values({
-      arcId: "EXISTING-FOLDER",
+      arcId: "12345678-90ab-cdef-1234-567890abcdef",
       folderData: {
         data: {
           items: [
@@ -64,7 +63,7 @@ export async function createTestData(db: ReturnType<typeof drizzle>) {
   const deletableFolder = await db
     .insert(schema.archivedFolders)
     .values({
-      arcId: "DELETE-ME",
+      arcId: "98765432-10fe-dcba-9876-543210fedcba",
       folderData: {
         data: { items: [], rootID: "delete-folder", root: "delete-folder" },
         shareID: "delete-share",

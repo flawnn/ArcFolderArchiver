@@ -5,13 +5,15 @@ import type { ArcFolder } from "./models/arc";
 // Mock the external dependencies using Bun's mock.module
 mock.module("axios", () => ({
   default: {
-    get: mock(() => Promise.resolve({
-      data: "",
-      status: 200,
-      statusText: "OK",
-      headers: {},
-      config: {},
-    })),
+    get: mock(() =>
+      Promise.resolve({
+        data: "",
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: {},
+      }),
+    ),
   },
 }));
 
@@ -29,7 +31,7 @@ describe("ArcClient", () => {
     // Import the mocked modules to get access to their mocks
     const axios = await import("axios");
     const cheerio = await import("cheerio");
-    
+
     mockAxiosGet = axios.default.get as any;
     mockCheerioLoad = cheerio.load as any;
 
@@ -45,7 +47,7 @@ describe("ArcClient", () => {
   });
 
   describe("extractFolderData", () => {
-    const validArcId = "123ABC";
+    const validArcId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
     const invalidId = "not-a-url";
     const nonArcId = "https://google.com";
 
@@ -108,7 +110,9 @@ describe("ArcClient", () => {
       const result = await arcClient.extractFolderData(validArcId);
 
       // Assert
-      expect(mockAxiosGet).toHaveBeenCalledWith(validArcId);
+      expect(mockAxiosGet).toHaveBeenCalledWith(
+        "https://arc.net/folder/" + validArcId,
+      );
       expect(result).toEqual(mockArcData);
     });
 
@@ -213,9 +217,7 @@ describe("ArcClient", () => {
         mockAxiosGet.mockRejectedValue(error);
 
         // Act & Assert
-        await expect(
-          arcClient.extractFolderData(validArcId),
-        ).rejects.toThrow();
+        await expect(arcClient.extractFolderData(validArcId)).rejects.toThrow();
 
         // Reset for next iteration
         mockAxiosGet.mockReset();

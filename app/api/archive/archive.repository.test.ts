@@ -19,10 +19,12 @@ describe("ArchiveRepository - Essential Tests", () => {
 
   describe("findByArcId", () => {
     it("should return folder when arc ID exists", async () => {
-      const result = await repository.findByArcId("EXISTING-FOLDER");
+      const result = await repository.findByArcId(
+        "12345678-90ab-cdef-1234-567890abcdef",
+      );
 
       expect(result).not.toBeNull();
-      expect(result?.arcId).toBe("EXISTING-FOLDER");
+      expect(result?.arcId).toBe("12345678-90ab-cdef-1234-567890abcdef");
       expect(result?.folderData.author).toBe("Test Author");
     });
 
@@ -41,7 +43,7 @@ describe("ArchiveRepository - Essential Tests", () => {
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe(existingFolder.id);
-      expect(result?.arcId).toBe("EXISTING-FOLDER");
+      expect(result?.arcId).toBe("12345678-90ab-cdef-1234-567890abcdef");
     });
 
     it("should return null when ID does not exist", async () => {
@@ -101,7 +103,7 @@ describe("ArchiveRepository - Essential Tests", () => {
     it("should enforce unique constraint on arcId", async () => {
       await expect(
         repository.create({
-          arcId: "EXISTING-FOLDER", // This already exists
+          arcId: "12345678-90ab-cdef-1234-567890abcdef", // This already exists
           folderData: {
             data: { items: [], rootID: "root", root: "root" },
             shareID: "share",

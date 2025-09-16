@@ -1,8 +1,10 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import {
+  type DELETEFolderRequest,
   DELETEFolderRequestSchema,
   DELETEFolderResponseSchema,
+  type POSTFolderRequest,
   POSTFolderRequestSchema,
   type POSTFolderResponse,
 } from "../models/archive";
@@ -19,10 +21,14 @@ class ArchiveController {
   }
 
   async postFolder(c: Context) {
-    const body = POSTFolderRequestSchema.safeParse(await c.req.json()).data;
+    let body: POSTFolderRequest;
 
-    if (!body) {
-      throw new HTTPException(400, { message: "Malformed Body" });
+    try {
+      body = POSTFolderRequestSchema.parse(await c.req.json());
+    } catch (e) {
+      throw new HTTPException(400, {
+        res: c.json({ message: "Malformed Body" }),
+      });
     }
 
     // Not relevant for now - we will just allow the user to delete a folder
@@ -39,10 +45,14 @@ class ArchiveController {
   }
 
   async deleteFolder(c: Context) {
-    const body = DELETEFolderRequestSchema.safeParse(await c.req.json()).data;
+    let body: DELETEFolderRequest;
 
-    if (!body) {
-      throw new HTTPException(400, { message: "Malformed Body" });
+    try {
+      body = DELETEFolderRequestSchema.parse(await c.req.json());
+    } catch {
+      throw new HTTPException(400, {
+        res: c.json({ message: "Malformed Body" }),
+      });
     }
 
     const result = await this._archiveService.deleteFolder(body.arcId);

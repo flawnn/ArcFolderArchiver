@@ -10,17 +10,11 @@ export class ArchiveService {
     arcId: string,
     deleteInDays: number,
   ): Promise<any | null> {
-    // TODO: Move to the frontend
-    // const arcId = /^https:\/\/arc\.net\/folder\/([a-fA-F0-9-]{1,50})$/.exec(
-    //   url,
-    // )?.[0];
-
-    // // 1. Check Input Params
-    // if (deleteInDays <= 0 || !arcId) {
-    //   throw new Error(
-    //     "Invalid input parameters - Check the Arc ID or the deleteInDays",
-    //   );
-    // }
+    if (deleteInDays <= 0) {
+      throw new Error(
+        "Invalid input parameters - Check the deleteInDays",
+      );
+    }
 
     // 2. Check if the folder already exists in our database
     const existingFolder = await this.repository.findByArcId(arcId);

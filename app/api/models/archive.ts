@@ -2,8 +2,8 @@ import z from "zod";
 
 // POST /folder schemas - Input & Output
 const POSTFolderRequestSchema = z.object({
-  deleteInDays: z.number().nonnegative().default(0),
-  arcId: z.string().max(50),
+  deleteInDays: z.int().nonnegative().default(0),
+  arcId: z.uuid(),
 });
 
 const POSTFolderResponseSchema = z.object({
@@ -12,7 +12,7 @@ const POSTFolderResponseSchema = z.object({
 
 // DELETE /folder schemas - Input & Output
 const DELETEFolderRequestSchema = z.object({
-  arcId: z.string().max(50),
+  arcId: z.uuid(),
 });
 
 const DELETEFolderResponseSchema = z.boolean();
