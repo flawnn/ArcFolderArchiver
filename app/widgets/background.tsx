@@ -44,7 +44,7 @@ export const Background = ({ children }: { children: React.ReactNode }) => {
         // Trigger fade-in after a brief delay to ensure Vanta has rendered
         setTimeout(() => {
           setVantaLoaded(true);
-        }, 200);
+        }, 1);
       }
     };
 
@@ -56,7 +56,7 @@ export const Background = ({ children }: { children: React.ReactNode }) => {
           clearInterval(checkVanta);
           initVanta();
         }
-      }, 100);
+      }, 50);
 
       return () => clearInterval(checkVanta);
     }

@@ -29,7 +29,10 @@ function ArcArchiver() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="bg-gray-300/64 backdrop-blur-[20px] rounded-3xl p-12 shadow-2xl">
+      <div
+        className="backdrop-blur-[10px] rounded-3xl p-12 shadow-2xl"
+        style={{ backgroundColor: "rgba(221, 221, 221, 0.64)" }}
+      >
         {/* Header */}
         <div className="text-center mb-16">
           <h1
