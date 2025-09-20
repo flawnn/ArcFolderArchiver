@@ -1,14 +1,15 @@
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  isRouteErrorResponse,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
+import { Background } from "./widgets/background";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -22,6 +23,8 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
   { rel: "stylesheet", href: stylesheet },
+  { rel: "preload", href: "/js/three.min.js", as: "script" },
+  { rel: "preload", href: "/js/vanta.fog.min.js", as: "script" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -32,9 +35,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script src="/js/three.min.js"></script>
+        <script src="/js/vanta.fog.min.js"></script>
       </head>
-      <body>
-        {children}
+      <body className="w-screen h-screen fixed inset-0 overflow-hidden">
+        <Background>{children}</Background>
+
         <ScrollRestoration />
         <Scripts />
       </body>
