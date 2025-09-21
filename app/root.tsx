@@ -12,21 +12,19 @@ import stylesheet from "./app.css?url";
 import { Background } from "./widgets/background";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  // Preload the Google Fonts CSS so it arrives ASAP
   {
     rel: "preload",
-    as: "style",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=optional",
+    as: "font",
+    href: "/fonts/Inter-roman.var.woff2",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
   },
   {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=optional",
+    rel: "preload",
+    as: "font",
+    href: "/fonts/Inter-italic.var.woff2",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
   },
   { rel: "stylesheet", href: stylesheet },
   { rel: "preload", href: "/js/three.min.js", as: "script" },
