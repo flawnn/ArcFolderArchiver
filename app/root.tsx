@@ -7,6 +7,7 @@ import {
   isRouteErrorResponse,
 } from "react-router";
 
+import { Toaster } from "react-hot-toast";
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
 import { Background } from "./widgets/background";
@@ -47,6 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <ScrollRestoration />
         <Scripts />
+        <Toaster position="bottom-center" />
       </body>
     </html>
   );
