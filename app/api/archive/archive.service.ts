@@ -1,4 +1,4 @@
-import { arcClient } from "../../external/arc.client";
+import { arcClient } from "../../external/arc-client";
 import { ArchiveRepository } from "./archive.repository";
 
 export class ArchiveService {
@@ -10,10 +10,9 @@ export class ArchiveService {
     arcId: string,
     deleteInDays: number,
   ): Promise<any | null> {
+    console.log("GG");
     if (deleteInDays <= 0) {
-      throw new Error(
-        "Invalid input parameters - Check the deleteInDays",
-      );
+      throw new Error("Invalid input parameters - Check the deleteInDays");
     }
 
     // 2. Check if the folder already exists in our database

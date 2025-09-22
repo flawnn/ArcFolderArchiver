@@ -21,7 +21,7 @@ mock.module("./archive.repository", () => ({
 }));
 
 // Import AFTER mocking
-const { arcClient } = await import("../../external/arc.client");
+const { arcClient } = await import("../../external/arc-client");
 
 describe("ArchiveService - Mocked Dependencies", () => {
   const archiveService = new ArchiveService();
@@ -123,7 +123,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
     });
 
     it("should handle ArcClient errors gracefully", async () => {
-      mockRepository.create.mockReset()
+      mockRepository.create.mockReset();
 
       // Arrange: Mock repository returns null, ArcClient throws error
       mockRepository.findByArcId.mockResolvedValue(null);
@@ -181,7 +181,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
     });
 
     it("should handle null return from ArcClient", async () => {
-      mockRepository.create.mockReset()
+      mockRepository.create.mockReset();
 
       // Arrange: ArcClient returns null (e.g., when folder is not found or malformed)
       mockRepository.findByArcId.mockResolvedValue(null);

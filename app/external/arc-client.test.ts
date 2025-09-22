@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import { arcClient } from "./arc.client";
+import { arcClient } from "./arc-client";
 import type { ArcFolder } from "./models/arc";
 
 // Mock the external dependencies using Bun's mock.module
