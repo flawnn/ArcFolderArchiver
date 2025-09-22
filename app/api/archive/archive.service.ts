@@ -1,3 +1,4 @@
+import type { ArchivedFolder } from "~/db/schema";
 import { arcClient } from "../../external/arc-client";
 import { ArchiveRepository } from "./archive.repository";
 
@@ -9,8 +10,7 @@ export class ArchiveService {
   async getOrCreateFolder(
     arcId: string,
     deleteInDays: number,
-  ): Promise<any | null> {
-    console.log("GG");
+  ): Promise<ArchivedFolder | null> {
     if (deleteInDays <= 0) {
       throw new Error("Invalid input parameters - Check the deleteInDays");
     }

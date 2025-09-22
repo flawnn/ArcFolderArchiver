@@ -34,13 +34,13 @@ class ArchiveController {
     // Not relevant for now - we will just allow the user to delete a folder
     // const deleteInDays = body.deleteInDays;
 
-    const internalUUID = await this._archiveService.getOrCreateFolder(
+    const folder = await this._archiveService.getOrCreateFolder(
       body.arcId,
       body.deleteInDays,
     );
 
     return c.json({
-      internalUUID: internalUUID,
+      internalUUID: folder!.id,
     } satisfies POSTFolderResponse);
   }
 
