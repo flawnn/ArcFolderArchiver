@@ -10,7 +10,7 @@ import {
 import { Toaster } from "react-hot-toast";
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
-import { Background } from "./widgets/background";
+import { Background } from "./components/background";
 
 export const links: Route.LinksFunction = () => [
   {

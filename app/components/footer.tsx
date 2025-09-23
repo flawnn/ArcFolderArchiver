@@ -56,7 +56,7 @@ export const FooterBadge = ({
       >
         <Github className="h-[18px] w-[18px]" aria-hidden="true" />
       </motion.a>
-      <span className="text-black text-[10px] font-medium leading-[15px] tracking-tight select-none">
+      <span className="text-black text-sm font-medium leading-[15px] tracking-tight select-none">
         {text}
       </span>
     </motion.div>

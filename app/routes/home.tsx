@@ -2,6 +2,7 @@ import { ChevronRight, Loader2, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Form, useActionData, useNavigation } from "react-router";
+import { BlurContainer } from "~/components/blur-container";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Tooltip } from "~/components/ui/tooltip";
@@ -107,76 +108,71 @@ function ArcArchiver() {
   }, [actionData]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div
-        className="backdrop-blur-[10px] rounded-3xl p-12 shadow-2xl"
-        style={{ backgroundColor: "rgba(221, 221, 221, 0.64)" }}
-      >
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1
-            className="text-6xl font-medium text-white mb-4"
-            style={{ letterSpacing: "-1.55px" }}
-          >
-            Arc Archiver
-          </h1>
-          <p className="text-xl text-white/85 font-light tracking-wide">
-            Flatten or export your precious Arc folders
-          </p>
+    <BlurContainer>
+      {/* Header */}
+      <div className="text-center mb-16">
+        <h1
+          className="text-6xl font-medium text-white mb-4"
+          style={{ letterSpacing: "-1.55px" }}
+        >
+          Arc Archiver
+        </h1>
+        <p className="text-xl text-white/85 font-light tracking-wide">
+          Flatten or export your precious Arc folders
+        </p>
+      </div>
+
+      {/* URL Input Section */}
+      <Form method="post" className="mb-12">
+        <label className="block text-white/90 text-lg font-medium mb-4 tracking-wide">
+          Arc Folder URL
+        </label>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              type="url"
+              name="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://arc.net/folder/..."
+              className="h-14 text-lg font-normal bg-white/90 border-0 rounded-2xl px-6 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-white/50"
+              required
+            />
+          </div>
+          <Tooltip content="No custom settings available yet" side="top">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-14 w-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white border-0"
+              aria-label="Settings"
+              type="button"
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+          </Tooltip>
         </div>
 
-        {/* URL Input Section */}
-        <Form method="post" className="mb-12">
-          <label className="block text-white/90 text-lg font-medium mb-4 tracking-wide">
-            Arc Folder URL
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Input
-                type="url"
-                name="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://arc.net/folder/..."
-                className="h-14 text-lg font-normal bg-white/90 border-0 rounded-2xl px-6 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-white/50"
-                required
-              />
-            </div>
-            <Tooltip content="No custom settings available yet" side="top">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-14 w-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white border-0"
-                aria-label="Settings"
-                type="button"
-              >
-                <Settings className="h-6 w-6" />
-              </Button>
-            </Tooltip>
+        {/* Archive Button */}
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+          className="mt-8 w-full h-16 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium tracking-wide rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-between"
+        >
+          <div className="flex-1"></div>
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              Processing...
+            </span>
+          ) : (
+            <span>Archive Folder</span>
+          )}
+          <div className="flex-1 flex justify-end">
+            {isSubmitting ? null : <ChevronRight className="h-6 w-6" />}
           </div>
-
-          {/* Archive Button */}
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
-            className="mt-8 w-full h-16 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium tracking-wide rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-between"
-          >
-            <div className="flex-1"></div>
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                Processing...
-              </span>
-            ) : (
-              <span>Archive Folder</span>
-            )}
-            <div className="flex-1 flex justify-end">
-              {isSubmitting ? null : <ChevronRight className="h-6 w-6" />}
-            </div>
-          </Button>
-        </Form>
-      </div>
-    </div>
+        </Button>
+      </Form>
+    </BlurContainer>
   );
 }
