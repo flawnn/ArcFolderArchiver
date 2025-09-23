@@ -55,7 +55,7 @@ class ArchiveController {
       });
     }
 
-    const result = await this._archiveService.deleteFolder(body.arcId);
+    const result = await this._archiveService.deleteFolder(body.id);
 
     return c.json(DELETEFolderResponseSchema.parse(result));
   }

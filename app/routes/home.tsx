@@ -16,7 +16,6 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  // [AI] Validate input, extract UUID, and forward to Hono API with CSRF token
   const formData = await request.formData();
   const url = (formData.get("url") ?? "").toString().trim();
 

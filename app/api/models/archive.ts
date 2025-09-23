@@ -12,7 +12,7 @@ const POSTFolderResponseSchema = z.object({
 
 // DELETE /folder schemas - Input & Output
 const DELETEFolderRequestSchema = z.object({
-  arcId: z.uuid(),
+  id: z.uuid(),
 });
 
 const DELETEFolderResponseSchema = z.boolean();

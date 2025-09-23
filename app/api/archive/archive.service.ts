@@ -10,7 +10,7 @@ export class ArchiveService {
 
   /**
    * This function is for getting an existing folder's ID, or fetching a unknown folder, and then returning its id.
-   * 
+   *
    * It is mainly being used for the user flow of submitting a new folder they want to archive, as when the user is being redirected to the folder-view, we fetch folder data via our internal methods directly.
    */
   async getOrCreateFolder(
@@ -47,6 +47,26 @@ export class ArchiveService {
     });
 
     return newFolder[0] ?? null;
+  }
+
+  /**
+   * Retrieves an existing folder by its internal ID.
+   * Returns null if not found.
+   */
+  async getFolder(id: string): Promise<ArchivedFolder | null> {
+    // Basic input validation
+    if (!id || !id.trim()) {
+      throw new Error("Invalid ID parameter.");
+    }
+
+    // A simple regex to check for UUID-like format.
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      throw new Error("ID does not match expected format.");
+    }
+
+    return this.repository.findById(id);
   }
 
   async deleteFolder(id: string): Promise<boolean> {

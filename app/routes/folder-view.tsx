@@ -1,76 +1,100 @@
 // provides type safety/inference
 import { useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { redirect } from "react-router";
+import { archiveService } from "~/api/archive/archive.service";
 import type { SharedFolder } from "~/api/models/folder";
 import { ActionButton } from "~/components/action-button";
 import { BlurContainer } from "~/components/blur-container";
 import { FolderItemWidget } from "~/components/folder-item";
+import { NoFolderFound } from "~/components/no-folder-found";
+import { transformArcToSharedFolder } from "~/external/arc-transformer";
 import type { Route } from "./+types/folder-view";
 
 // provides `loaderData` to the component
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const folderId = params.folderid;
   if (!folderId || folderId.length === 0) {
     throw redirect("/");
   }
 
-  // [AI] TODO: replace with real fetch by folderId
-  const mock: SharedFolder = {
-    title: "My Project Folder",
-    owner: "John Doe",
-    folders: [
-      {
-        id: "1",
-        name: "Development",
-        type: "folder",
-        children: [
-          { id: "1-1", name: "GitHub Repository", type: "tab" },
-          { id: "1-2", name: "Documentation", type: "tab" },
-          {
-            id: "1-3",
-            name: "Frontend",
-            type: "folder",
-            children: [
-              { id: "1-3-1", name: "React Components", type: "tab" },
-              { id: "1-3-2", name: "Styling Guide", type: "tab" },
-            ],
-          },
-        ],
-      },
-      {
-        id: "2",
-        name: "Research",
-        type: "folder",
-        children: [
-          { id: "2-1", name: "Market Analysis", type: "tab" },
-          { id: "2-2", name: "Competitor Research", type: "tab" },
-          { id: "2-3", name: "User Interviews", type: "tab" },
-        ],
-      },
-      { id: "3", name: "Project Brief", type: "tab" },
-      { id: "4", name: "Meeting Notes", type: "tab" },
-    ],
-  };
+  try {
+    // Fetch the archived folder from the database
+    const archivedFolder = await archiveService.getFolder(folderId);
 
-  return { data: mock };
+    if (!archivedFolder) {
+      // Return a special flag to indicate no folder found
+      return { data: null, notFound: true };
+    }
+
+    // Transform ArcFolder to SharedFolder format
+    const sharedFolder = transformArcToSharedFolder(archivedFolder.folderData);
+
+    return { data: sharedFolder, notFound: false, folderId };
+  } catch (error) {
+    console.error("Error loading folder:", error);
+    // Return not found for any errors (including invalid UUID format)
+    return { data: null, notFound: true };
+  }
 }
 
 export default function Component({ loaderData }: Route.ComponentProps) {
-  const { data } = loaderData as unknown as { data: SharedFolder };
+  const { data, notFound, folderId } = loaderData as unknown as {
+    data: SharedFolder | null;
+    notFound: boolean;
+    folderId?: string;
+  };
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-  const [showTopFade, setShowTopFade] = useState(false);
-  const [showBottomFade, setShowBottomFade] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Show fallback if no folder found
+  if (notFound || !data) {
+    return <NoFolderFound />;
+  }
 
   const handleFolderClick = (folderId: string) => {
-    // [AI] handle navigation to sub-folder or expand details
     console.debug("Folder clicked", folderId);
   };
 
-  const handleDeleteFolder = () => {
-    // [AI] trigger delete flow
-    console.debug("Delete folder");
+  const handleDeleteFolder = async () => {
+    if (!folderId || isDeleting) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this folder? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch("/api/archive", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: folderId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete folder");
+      }
+
+      toast.success("Folder deleted successfully");
+      // Redirect to homepage after successful deletion
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete folder",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDownloadJSON = () => {
@@ -145,8 +169,12 @@ export default function Component({ loaderData }: Route.ComponentProps) {
 
           {/* Action Buttons */}
           <div className="flex gap-4 justify-between">
-            <ActionButton variant="delete" onClick={handleDeleteFolder}>
-              Delete Folder
+            <ActionButton
+              variant="delete"
+              onClick={handleDeleteFolder}
+              className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              {isDeleting ? "Deleting..." : "Delete Folder"}
             </ActionButton>
 
             <ActionButton variant="download" onClick={handleDownloadJSON}>
