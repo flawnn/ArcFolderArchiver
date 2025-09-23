@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Form, useActionData, useNavigation } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Tooltip } from "~/components/ui/tooltip";
 import type { Route } from "./+types/home";
 
 export function meta(_args: Route.MetaArgs) {
@@ -141,16 +142,17 @@ function ArcArchiver() {
                 required
               />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-14 w-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white border-0"
-              title="No Custom Settings"
-              aria-label="Settings"
-              type="button"
-            >
-              <Settings className="h-6 w-6" />
-            </Button>
+            <Tooltip content="No custom settings available yet" side="top">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-14 w-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white border-0"
+                aria-label="Settings"
+                type="button"
+              >
+                <Settings className="h-6 w-6" />
+              </Button>
+            </Tooltip>
           </div>
 
           {/* Archive Button */}
