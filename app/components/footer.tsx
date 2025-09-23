@@ -25,9 +25,9 @@ export const FooterBadge = ({
   };
 
   const containerClasses = [
-    "inline-flex items-center gap-3",
-    "h-[46px] px-3 pr-4",
-    "rounded-[29px]",
+    "inline-flex items-center gap-1",
+    "h-[32px] px-2 pr-3",
+    "rounded-[20px]",
     "bg-zinc-300/90 text-black",
     "shadow-sm",
     "backdrop-blur-[2px]",
@@ -50,13 +50,13 @@ export const FooterBadge = ({
         whileTap={{ scale: 0.94 }}
         onTap={handleJiggle}
         onClick={handleJiggle}
-        className="grid place-items-center w-[26px] h-[26px] rounded-full text-black/70 hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
+        className="grid place-items-center w-[18px] h-[18px] rounded-full text-black/70 hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
         aria-label="Open GitHub repository"
         title="GitHub"
       >
-        <Github className="h-[18px] w-[18px]" aria-hidden="true" />
+        <Github className="h-[14px] w-[14px]" aria-hidden="true" />
       </motion.a>
-      <span className="text-black text-sm font-medium leading-[15px] tracking-tight select-none">
+      <span className="text-black text-xs font-medium leading-[12px] tracking-tight select-none">
         {text}
       </span>
     </motion.div>
