@@ -2,7 +2,7 @@ import { Link as LinkIcon } from "lucide-react";
 // provides type safety/inference
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { redirect } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { archiveService } from "~/api/archive/archive.service";
 import type { SharedFolder } from "~/api/models/folder";
 import { ActionButton } from "~/components/action-button";
@@ -48,6 +48,8 @@ export default function Component({ loaderData }: Route.ComponentProps) {
     folderId?: string;
     shareUrl?: string;
   };
+
+  const navigate = useNavigate();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -141,7 +143,10 @@ export default function Component({ loaderData }: Route.ComponentProps) {
       <div className="group relative">
         <BlurContainer>
           {/* Header */}
-          <header className="mb-8 relative -top-6 -left-6">
+          <header
+            onClick={() => navigate("/")}
+            className="mb-8 relative -top-6 -left-6 cursor-pointer"
+          >
             <h1 className="text-neutral-300 text-xl font-medium top-1 right-1">
               Arc Archiver
             </h1>
