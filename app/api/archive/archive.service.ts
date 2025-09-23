@@ -7,6 +7,12 @@ export class ArchiveService {
   constructor(repository: ArchiveRepository = new ArchiveRepository()) {
     this.repository = repository;
   }
+
+  /**
+   * This function is for getting an existing folder's ID, or fetching a unknown folder, and then returning its id.
+   * 
+   * It is mainly being used for the user flow of submitting a new folder they want to archive, as when the user is being redirected to the folder-view, we fetch folder data via our internal methods directly.
+   */
   async getOrCreateFolder(
     arcId: string,
     deleteInDays: number,

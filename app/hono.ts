@@ -33,7 +33,7 @@ export function setupHonoServer() {
   // Archive API Endpoint
   app
     .post("/api/archive", (c) => archiveController.postFolder(c))
-    .post("/api/archive/delete", (c) => archiveController.deleteFolder(c));
+    .delete("/api/archive", (c) => archiveController.deleteFolder(c));
 
   app.onError((err: Error | HTTPException, c: Context) => {
     console.log("=== Caught Error ===");
