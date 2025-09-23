@@ -1,3 +1,4 @@
+import { Link as LinkIcon } from "lucide-react";
 // provides type safety/inference
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -27,10 +28,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       return { data: null, notFound: true };
     }
 
-    // Transform ArcFolder to SharedFolder format
-    const sharedFolder = transformArcToSharedFolder(archivedFolder.folderData);
+    // Transform ArcFolder to SharedFolder format and get original share URL
+    const { shared, shareUrl } = transformArcToSharedFolder(
+      archivedFolder.folderData,
+    );
 
-    return { data: sharedFolder, notFound: false, folderId };
+    return { data: shared, shareUrl, notFound: false, folderId };
   } catch (error) {
     console.error("Error loading folder:", error);
     // Return not found for any errors (including invalid UUID format)
@@ -39,10 +42,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function Component({ loaderData }: Route.ComponentProps) {
-  const { data, notFound, folderId } = loaderData as unknown as {
+  const { data, notFound, folderId, shareUrl } = loaderData as unknown as {
     data: SharedFolder | null;
     notFound: boolean;
     folderId?: string;
+    shareUrl?: string;
   };
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +59,16 @@ export default function Component({ loaderData }: Route.ComponentProps) {
 
   const handleFolderClick = (folderId: string) => {
     console.debug("Folder clicked", folderId);
+  };
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Original folder URL copied!");
+    } catch {
+      toast.error("Failed to copy URL");
+    }
   };
 
   const handleDeleteFolder = async () => {
@@ -124,65 +138,81 @@ export default function Component({ loaderData }: Route.ComponentProps) {
         .custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.28) transparent; }
       `}</style>
 
-      <BlurContainer>
-        {/* Header */}
-        <header className="mb-8 relative -top-6 -left-6">
-          <h1 className="text-neutral-300 text-xl font-medium top-1 right-1">
-            Arc Archiver
-          </h1>
-        </header>
+      <div className="group relative">
+        <BlurContainer>
+          {/* Header */}
+          <header className="mb-8 relative -top-6 -left-6">
+            <h1 className="text-neutral-300 text-xl font-medium top-1 right-1">
+              Arc Archiver
+            </h1>
+          </header>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto">
-          {/* Title Section */}
-          <div className="mb-8">
-            <h2 className="text-white text-5xl font-bold mb-2 text-balance">
-              {data.title}
-            </h2>
-            <p className="text-white/80 text-lg">From {data.owner}</p>
-          </div>
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col max-w-4xl mx-auto">
+            {/* Title Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-white text-5xl font-bold mb-2 text-balance">
+                  {data.title}
+                </h2>
 
-          {/* Folder List (Scrollable) */}
-          <div className="relative mb-8">
-            <div
-              ref={scrollRef}
-              className="relative overflow-y-auto overscroll-contain custom-scroll pr-1"
-              style={{
-                maxHeight: "55vh",
-                WebkitMaskImage:
-                  "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent)",
-                maskImage:
-                  "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent)",
-              }}
-            >
-              <div className="space-y-2 py-2">
-                {data.folders.map((folder) => (
-                  <FolderItemWidget
-                    key={folder.id}
-                    folder={folder}
-                    onClick={(folder) => handleFolderClick(folder.id)}
-                  />
-                ))}
+                {shareUrl ? (
+                  <button
+                    onClick={handleCopyShareUrl}
+                    aria-label="Copy original folder URL"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  >
+                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 hover:bg-white/40 text-white">
+                      <LinkIcon className="w-5 h-5" />
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+              <p className="text-white/80 text-lg">From {data.owner}</p>
+            </div>
+
+            {/* Folder List (Scrollable) */}
+            <div className="relative mb-8">
+              <div
+                ref={scrollRef}
+                className="relative overflow-y-auto overscroll-contain custom-scroll pr-1"
+                style={{
+                  maxHeight: "55vh",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent)",
+                  maskImage:
+                    "linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent)",
+                }}
+              >
+                <div className="space-y-2 py-2">
+                  {data.folders.map((folder) => (
+                    <FolderItemWidget
+                      key={folder.id}
+                      folder={folder}
+                      onClick={(folder) => handleFolderClick(folder.id)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 justify-between">
-            <ActionButton
-              variant="delete"
-              onClick={handleDeleteFolder}
-              className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}
-            >
-              {isDeleting ? "Deleting..." : "Delete Folder"}
-            </ActionButton>
+            {/* Action Buttons */}
+            <div className="flex gap-4 justify-between">
+              <ActionButton
+                variant="delete"
+                onClick={handleDeleteFolder}
+                className={isDeleting ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                {isDeleting ? "Deleting..." : "Delete Folder"}
+              </ActionButton>
 
-            <ActionButton variant="download" onClick={handleDownloadJSON}>
-              Download JSON
-            </ActionButton>
+              <ActionButton variant="download" onClick={handleDownloadJSON}>
+                Download JSON
+              </ActionButton>
+            </div>
           </div>
-        </div>
-      </BlurContainer>
+        </BlurContainer>
+      </div>
     </>
   );
 }

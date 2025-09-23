@@ -1,18 +1,16 @@
 import type { FolderItem, SharedFolder } from "~/api/models/folder";
 import type { ArcFolder, ArcItem } from "~/external/models/arc";
 
-/**
- * Transforms an ArcFolder to SharedFolder format for the UI.
- */
-export function transformArcToSharedFolder(arcFolder: ArcFolder): SharedFolder {
-  const { data, author } = arcFolder;
+export function transformArcToSharedFolder(arcFolder: ArcFolder): {
+  shared: SharedFolder;
+  shareUrl: string;
+} {
+  const { data, author, shareID } = arcFolder;
   const { items, root, rootID } = data;
 
-  // Create a lookup map for items by ID
   const itemsMap = new Map<string, ArcItem>();
   items.forEach((item) => itemsMap.set(item.id, item));
 
-  // Determine root items
   const rootItems: string[] = [];
   if (Array.isArray(root)) {
     rootItems.push(...root);
@@ -22,47 +20,51 @@ export function transformArcToSharedFolder(arcFolder: ArcFolder): SharedFolder {
     rootItems.push(rootID);
   }
 
-  // Transform root items to FolderItems
   const folders: FolderItem[] = rootItems
     .map((id) => transformArcItemToFolderItem(id, itemsMap))
     .filter((item): item is FolderItem => item !== null);
 
-  // Extract title from the first root item or use a default
   const title =
-    (rootItems.length > 0 && itemsMap.get(rootItems[0])?.title) ||
+    (rootItems.length > 0 &&
+      (itemsMap.get(rootItems[0])?.data as any)?.savedTitle) ||
+    itemsMap.get(rootItems[0])?.title ||
     "Archived Folder";
 
-  return {
+  const shared: SharedFolder = {
     title,
     owner: author,
     folders,
   };
+
+  const shareUrl = `https://arc.net/folder/${shareID}`;
+  return { shared, shareUrl };
 }
 
-/**
- * Recursively transforms an ArcItem to FolderItem.
- */
 function transformArcItemToFolderItem(
   itemId: string,
   itemsMap: Map<string, ArcItem>,
 ): FolderItem | null {
-  debugger;
   const item = itemsMap.get(itemId);
   if (!item) return null;
 
   const isTab = "tab" in item.data;
   const isFolder = "list" in item.data;
-
-  // Skip split views for now
   if (!isTab && !isFolder) return null;
+
+  const url = isTab
+    ? ((item.data as any).tab?.savedURL ?? undefined)
+    : undefined;
+  const name =
+    (isTab ? (item.data as any).tab?.savedTitle : item.title) ||
+    (isTab ? "Untitled Tab" : "Untitled Folder");
 
   const folderItem: FolderItem = {
     id: item.id,
-    name: item.data.savedTitle || (isTab ? "Untitled Tab" : "Untitled Folder"),
+    name,
     type: isTab ? "tab" : "folder",
+    url,
   };
 
-  // If it's a folder with children, recursively transform them
   if (isFolder && item.childrenIds.length > 0) {
     folderItem.children = item.childrenIds
       .map((childId) => transformArcItemToFolderItem(childId, itemsMap))

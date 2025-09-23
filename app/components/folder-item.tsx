@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useRef, useState } from "react";
 import type { FolderItem } from "~/api/models/folder";
+import { Favicon } from "~/components/favicon";
 import { cn } from "~/lib/utils";
 
 interface FolderItemProps {
@@ -51,9 +52,15 @@ export function FolderItemWidget({
   const isFolder = folder.type === "folder";
 
   const handleClick = () => {
+    if (!isFolder && folder.url) {
+      window.open(folder.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
     if (isFolder && hasChildren) {
       setIsExpanded(!isExpanded);
     }
+
     onClick?.(folder);
   };
 
@@ -85,7 +92,6 @@ export function FolderItemWidget({
           className,
         )}
       >
-        {/* [AI] Glow effect overlay */}
         <div
           className={cn(
             "absolute inset-0 opacity-0 transition-opacity duration-300 rounded-2xl",
@@ -101,7 +107,9 @@ export function FolderItemWidget({
           {isFolder ? (
             <FilledFolderIcon className={iconColorClass} />
           ) : (
-            <FilledPageIcon className={iconColorClass} />
+            <>
+              <Favicon url={folder.url} size={24} />
+            </>
           )}
         </div>
 

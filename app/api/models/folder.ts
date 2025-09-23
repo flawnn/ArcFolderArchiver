@@ -4,6 +4,7 @@ export interface FolderItem {
   type: "tab" | "folder";
   icon?: string;
   children?: FolderItem[];
+  url?: string;
 }
 
 export interface SharedFolder {
