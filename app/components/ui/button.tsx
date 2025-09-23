@@ -1,8 +1,8 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "@radix-ui/react-slot";
+import { type VariantProps, cva } from "class-variance-authority";
+import * as React from "react";
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/lib/utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -31,27 +31,70 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean;
+  glow?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  (
+    { className, variant, size, asChild = false, glow = false, ...props },
+    ref,
+  ) => {
+    const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
+    const [isHovered, setIsHovered] = React.useState(false);
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+    const handleMouseMove = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (!glow || !buttonRef.current) return;
+
+      const rect = buttonRef.current.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      setMousePosition({ x, y });
+    };
+
+    const Comp = asChild ? Slot : "button";
+
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        className={cn(
+          buttonVariants({ variant, size }),
+          glow && "relative overflow-hidden transition-all duration-300",
+          className,
+        )}
+        ref={asChild ? ref : buttonRef}
+        onMouseMove={glow ? handleMouseMove : undefined}
+        onMouseEnter={glow ? () => setIsHovered(true) : undefined}
+        onMouseLeave={glow ? () => setIsHovered(false) : undefined}
         {...props}
-      />
-    )
-  }
-)
-Button.displayName = "Button"
+      >
+        {glow && (
+          <div
+            className={cn(
+              "absolute inset-0 opacity-0 transition-opacity duration-300 rounded-md",
+              isHovered && "opacity-20",
+            )}
+            style={{
+              background: `radial-gradient(circle 80px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 255, 255, 0.3) 0%, transparent 70%)`,
+            }}
+          />
+        )}
+        {glow ? (
+          <span className="relative z-10">{props.children}</span>
+        ) : (
+          props.children
+        )}
+      </Comp>
+    );
+  },
+);
+Button.displayName = "Button";
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
