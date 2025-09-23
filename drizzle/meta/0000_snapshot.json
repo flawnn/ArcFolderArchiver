@@ -1,5 +1,5 @@
 {
-  "id": "41dfc510-2b85-4e94-903a-432b6769f568",
+  "id": "7e3a060d-26e2-4200-9839-183cc03c2b0e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,10 +10,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true,
-          "default": "nanoid(21)"
+          "default": "uuid_generate_v4()"
         },
         "arc_id": {
           "name": "arc_id",
@@ -26,13 +26,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "last_fetched_at": {
           "name": "last_fetched_at",
@@ -53,6 +46,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "deleted_at": {
           "name": "deleted_at",
           "type": "timestamp",
@@ -64,8 +64,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "archived_folders_arcId_unique": {
-          "name": "archived_folders_arcId_unique",
+        "archived_folders_arc_id_unique": {
+          "name": "archived_folders_arc_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "arc_id"
