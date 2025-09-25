@@ -1,4 +1,5 @@
 import type { ArchivedFolder } from "~/db/schema";
+import type { ArcFolder } from "~/external/models/arc";
 import { arcClient } from "../../external/arc-client";
 import { ArchiveRepository } from "./archive.repository";
 
@@ -29,11 +30,7 @@ export class ArchiveService {
     }
 
     // 3. If not, fetch the folder data from the external Arc client
-    const folderData = await arcClient.extractFolderData(arcId);
-
-    if (!folderData) {
-      throw new Error("Failed to fetch folder data from Arc.");
-    }
+    const folderData = await this.fetchFolder(arcId);
 
     // 4. Calculate the deletion date
     const deleteAt = new Date();
@@ -47,6 +44,16 @@ export class ArchiveService {
     });
 
     return newFolder[0] ?? null;
+  }
+
+  async fetchFolder(arcId: string): Promise<ArcFolder> {
+    const folderData = await arcClient.extractFolderData(arcId);
+
+    if (!folderData) {
+      throw new Error("Failed to fetch folder data from Arc.");
+    }
+
+    return folderData;
   }
 
   /**

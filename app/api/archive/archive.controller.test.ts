@@ -50,6 +50,7 @@ describe("ArchiveController", () => {
     const validRequestBody: POSTFolderRequest = {
       arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       deleteInDays: 30,
+      jsonOnly: false
     };
 
     it("should return folder ID when folder exists in database", async () => {

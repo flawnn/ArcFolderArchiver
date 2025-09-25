@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { redirect, useNavigate } from "react-router";
 import { archiveService } from "~/api/archive/archive.service";
+import type { POSTFolderRequest } from "~/api/models/archive";
 import type { SharedFolder } from "~/api/models/folder";
 import { ActionButton } from "~/components/action-button";
 import { BlurContainer } from "~/components/blur-container";

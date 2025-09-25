@@ -4,6 +4,7 @@ import z from "zod";
 const POSTFolderRequestSchema = z.object({
   deleteInDays: z.int().nonnegative().default(0),
   arcId: z.uuid(),
+  jsonOnly: z.boolean().optional().default(false),
 });
 
 const POSTFolderResponseSchema = z.object({

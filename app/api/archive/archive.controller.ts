@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { transformArcToSharedFolder } from "~/external/arc-transformer";
 import {
   type DELETEFolderRequest,
   DELETEFolderRequestSchema,
@@ -33,6 +34,13 @@ class ArchiveController {
 
     // Not relevant for now - we will just allow the user to delete a folder
     // const deleteInDays = body.deleteInDays;
+
+    // If jsonOnly, just fetch & the fetched folder
+    // (Yes, it might be that the folder already exists in the database, but as this is just a JSON Request, we will not write extra logic"
+    if (body.jsonOnly) {
+      const fetchedFolder = await this._archiveService.fetchFolder(body.arcId);
+      return c.json(transformArcToSharedFolder(fetchedFolder));
+    }
 
     const folder = await this._archiveService.getOrCreateFolder(
       body.arcId,
