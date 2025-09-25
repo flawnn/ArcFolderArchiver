@@ -1,4 +1,4 @@
-FROM oven/bun:1 AS dependencies-env
+FROM oven/bun:1.2.20 AS dependencies-env
 COPY . /app
 
 FROM dependencies-env AS development-dependencies-env
