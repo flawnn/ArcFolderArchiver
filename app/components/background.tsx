@@ -39,7 +39,7 @@ export const Background = ({ children }: { children: React.ReactNode }) => {
           midtoneColor: 0x0a0061,
           lowlightColor: 0xacfcd9,
           baseColor: 0xa49393,
-          blurFactor: 0.78,
+          blurFactor: 0.4,
         });
 
         // Trigger fade-in after a brief delay to ensure Vanta has rendered
