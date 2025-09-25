@@ -140,7 +140,7 @@ export default function Component({ loaderData }: Route.ComponentProps) {
         .custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.28) transparent; }
       `}</style>
 
-      <div className="group relative">
+      <div className="group relative mx-auto w-full sm:w-[36rem] md:w-[40rem] lg:w-[42rem]">
         <BlurContainer>
           {/* Header */}
           <header

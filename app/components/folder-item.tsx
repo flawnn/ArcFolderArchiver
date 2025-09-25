@@ -103,21 +103,27 @@ export function FolderItemWidget({
         />
 
         {/* Type Icon */}
-        <div className="w-5 h-5 flex-shrink-0 relative z-10">
-          {isFolder ? (
+        {isFolder && (
+          <div className="w-5 h-5 flex-shrink-0 relative z-10">
             <FilledFolderIcon className={iconColorClass} />
-          ) : (
-            <>
-              <Favicon url={folder.url} size={24} />
-            </>
-          )}
-        </div>
+          </div>
+        )}
 
-        <span className="flex-1 text-base relative z-10">{folder.name}</span>
+        {/* Label area with favicon and single-line truncated name */}
+        <div className="relative z-10 flex-1 min-w-0 max-w-[72%] sm:max-w-[76%] md:max-w-[80%]">
+          <div className="flex items-center gap-2 min-w-0">
+            {!isFolder && folder.url ? (
+              <div className="flex-shrink-0">
+                <Favicon url={folder.url} size={16} />
+              </div>
+            ) : null}
+            <span className="block text-base truncate">{folder.name}</span>
+          </div>
+        </div>
 
         {/* Chevron on the right for folders with children */}
         {isFolder && hasChildren ? (
-          <div className="w-4 h-4 flex-shrink-0 ml-3 opacity-80 relative z-10">
+          <div className="w-4 h-4 flex-shrink-0 ml-auto opacity-80 relative z-10">
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-white/70" />
             ) : (
@@ -138,7 +144,7 @@ export function FolderItemWidget({
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             className={cn("overflow-hidden")}
           >
-            <div className="space-y-2 pl-6">
+            <div className="space-y-2 pl-4 md:pl-6">
               {folder.children!.map((child, index) => (
                 <motion.div
                   key={child.id}
