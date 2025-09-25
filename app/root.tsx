@@ -7,6 +7,7 @@ import {
   isRouteErrorResponse,
 } from "react-router";
 
+import * as Sentry from "@sentry/react";
 import { Toaster } from "react-hot-toast";
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
@@ -68,9 +69,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (error && error instanceof Error) {
+    // you only want to capture non 404-errors that reach the boundary
+    Sentry.captureException(error);
+    if (import.meta.env.DEV) {
+      details = error.message;
+      stack = error.stack;
+    }
   }
 
   return (

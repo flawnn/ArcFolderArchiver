@@ -26,6 +26,9 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
+    "@sentry/bun": "^10.15.0",
+    "@sentry/react": "^10.15.0",
+    "@sentry/react-router": "^10.15.0",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
@@ -45,7 +48,7 @@
     "zod": "^4.1.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.0.6",
     "@react-router/dev": "^7.0.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
