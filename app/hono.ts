@@ -25,10 +25,11 @@ export function setupHonoServer() {
   );
 
   // Global rate limiting - 100 requests per 15 minutes
-  app.use("*", simpleRateLimit(15 * 60 * 1000, 100));
+  if (!import.meta.env.DEV) app.use("*", simpleRateLimit(15 * 60 * 1000, 100));
 
   // Stricter rate limiting for API endpoints - 20 requests per 5 minutes
-  app.use("/api/*", simpleRateLimit(5 * 60 * 1000, 20));
+  if (!import.meta.env.DEV)
+    app.use("/api/*", simpleRateLimit(5 * 60 * 1000, 20));
 
   // Archive API Endpoint
   app
