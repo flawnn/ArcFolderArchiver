@@ -5,6 +5,7 @@ import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 import type { Context } from "vm";
 import { archiveController } from "./api/archive/archive.controller";
+import { isDev, isTestRuntime } from "./lib/env";
 import { simpleRateLimit } from "./lib/middleware/ratelimit";
 
 export function setupHonoServer() {
@@ -25,10 +26,11 @@ export function setupHonoServer() {
   );
 
   // Global rate limiting - 100 requests per 15 minutes
-  if (!import.meta.env.DEV) app.use("*", simpleRateLimit(15 * 60 * 1000, 100));
+  if (!(isDev || isTestRuntime))
+    app.use("*", simpleRateLimit(15 * 60 * 1000, 100));
 
   // Stricter rate limiting for API endpoints - 20 requests per 5 minutes
-  if (!import.meta.env.DEV)
+  if (!(isDev || isTestRuntime))
     app.use("/api/*", simpleRateLimit(5 * 60 * 1000, 20));
 
   // Archive API Endpoint
