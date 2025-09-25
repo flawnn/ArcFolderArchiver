@@ -7,6 +7,7 @@ import {
   type POSTFolderRequest,
 } from "../models/archive";
 import { archiveService } from "./archive.service";
+import { createMockArchivedFolder } from "~/lib/utils";
 
 describe("ArchiveController", () => {
   let app: ReturnType<typeof setupHonoServer>;
@@ -19,38 +20,11 @@ describe("ArchiveController", () => {
     // Clean up mocks after each test
   });
 
-  // [AI] Helper function to create mock ArchivedFolder objects
-  const createMockArchivedFolder = (
-    overrides: Partial<ArchivedFolder> = {},
-  ): ArchivedFolder => {
-    const mockFolderData: ArcFolder = {
-      data: {
-        items: [],
-        root: "mock-root-id",
-        rootID: "mock-root-id",
-      },
-      shareID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      author: "Test Author",
-    };
-
-    return {
-      id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-      arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      folderData: mockFolderData,
-      lastFetchedAt: new Date(),
-      deleteAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      created_at: new Date(),
-      updated_at: new Date(),
-      deleted_at: null,
-      ...overrides,
-    };
-  };
-
   describe("POST /api/archive (postFolder)", () => {
     const validRequestBody: POSTFolderRequest = {
       arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       deleteInDays: 30,
-      jsonOnly: false
+      jsonOnly: false,
     };
 
     it("should return folder ID when folder exists in database", async () => {
@@ -230,7 +204,7 @@ describe("ArchiveController", () => {
     });
   });
 
-  describe("POST /api/archive/delete (deleteFolder)", () => {
+  describe("DELETE /api/archive (deleteFolder)", () => {
     const validRequestBody: DELETEFolderRequest = {
       id: "b2c3d4e5-f6a7-8901-bcde-f23456789012",
     };
@@ -241,8 +215,8 @@ describe("ArchiveController", () => {
       deleteFolderSpy.mockResolvedValue(true);
 
       // Act
-      const response = await app.request("/api/archive/delete", {
-        method: "POST",
+      const response = await app.request("/api/archive", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validRequestBody),
       });
@@ -260,8 +234,8 @@ describe("ArchiveController", () => {
       deleteFolderSpy.mockResolvedValue(false);
 
       // Act
-      const response = await app.request("/api/archive/delete", {
-        method: "POST",
+      const response = await app.request("/api/archive", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validRequestBody),
       });
@@ -283,8 +257,8 @@ describe("ArchiveController", () => {
       ];
 
       for (const invalidCase of invalidIds) {
-        const response = await app.request("/api/archive/delete", {
-          method: "POST",
+        const response = await app.request("/api/archive", {
+          method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(invalidCase),
         });
@@ -303,8 +277,8 @@ describe("ArchiveController", () => {
       deleteFolderSpy.mockRejectedValue(new Error("Service error"));
 
       // Act
-      const response = await app.request("/api/archive/delete", {
-        method: "POST",
+      const response = await app.request("/api/archive", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validRequestBody),
       });

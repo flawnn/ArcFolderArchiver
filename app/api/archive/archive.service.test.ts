@@ -1,9 +1,9 @@
 import { describe, expect, it, mock } from "bun:test";
+import { createMockArchivedFolder } from "~/lib/utils";
 import type { ArcFolder } from "../../external/models/arc";
-import { ArchiveService } from "./archive.service";
 
 // Mock the dependencies at module level for easy spying
-mock.module("../../external/arc.client", () => ({
+mock.module("../../external/arc-client", () => ({
   arcClient: {
     extractFolderData: mock(),
   },
@@ -22,30 +22,27 @@ mock.module("./archive.repository", () => ({
 
 // Import AFTER mocking
 const { arcClient } = await import("../../external/arc-client");
+const { ArchiveService } = await import("./archive.service");
 
 describe("ArchiveService - Mocked Dependencies", () => {
   const archiveService = new ArchiveService();
 
   describe("getOrCreateFolder", () => {
-    const validUrl = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+    const validArcId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+    const existingFolder = createMockArchivedFolder({
+      arcId: validArcId,
+    });
     const deleteInDays = 30;
 
     it("should return existing folder when URL already exists in database (happy path - get)", async () => {
       // Arrange: Mock existing folder in database
-      const existingFolder = {
-        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-        arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        folderData: { name: "Existing Folder", tabs: [] },
-        createdAt: new Date(),
-        lastFetchedAt: new Date(),
-      };
 
       // Use the mocked methods directly
       mockRepository.findByArcId.mockResolvedValue(existingFolder);
 
       // Act
       const result = await archiveService.getOrCreateFolder(
-        validUrl,
+        validArcId,
         deleteInDays,
       );
 
@@ -86,13 +83,15 @@ describe("ArchiveService - Mocked Dependencies", () => {
         shareID: "123e4567-e89b-12d3-a456-426614174003",
         author: "Test Author",
       };
+
       const newFolder = [
         {
           id: "new-folder-id",
           arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           folderData: extractedData,
           deleteAt: expect.any(Date),
-          createdAt: expect.any(Date),
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
           lastFetchedAt: expect.any(Date),
         },
       ];
@@ -103,7 +102,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Act
       const result = await archiveService.getOrCreateFolder(
-        validUrl,
+        validArcId,
         deleteInDays,
       );
 
@@ -111,7 +110,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       expect(mockRepository.findByArcId).toHaveBeenCalledWith(
         "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       );
-      expect(arcClient.extractFolderData).toHaveBeenCalledWith(validUrl);
+      expect(arcClient.extractFolderData).toHaveBeenCalledWith(validArcId);
       expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -119,7 +118,13 @@ describe("ArchiveService - Mocked Dependencies", () => {
         }),
       );
 
-      expect(result).toEqual(newFolder[0]);
+      const expectedFolder = createMockArchivedFolder({
+        id: "new-folder-id",
+        arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        folderData: extractedData,
+      });
+
+      expect(result).toEqual(expectedFolder);
     });
 
     it("should handle ArcClient errors gracefully", async () => {
@@ -133,7 +138,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Act & Assert
       await expect(
-        archiveService.getOrCreateFolder(validUrl, deleteInDays),
+        archiveService.getOrCreateFolder(validArcId, deleteInDays),
       ).rejects.toThrow();
 
       // Verify that create was not called
@@ -158,7 +163,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Act & Assert
       await expect(
-        archiveService.getOrCreateFolder(validUrl, deleteInDays),
+        archiveService.getOrCreateFolder(validArcId, deleteInDays),
       ).rejects.toThrow();
     });
 
@@ -173,10 +178,10 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Test invalid deleteInDays
       await expect(
-        archiveService.getOrCreateFolder(validUrl, -1),
+        archiveService.getOrCreateFolder(validArcId, -1),
       ).rejects.toThrow();
       await expect(
-        archiveService.getOrCreateFolder(validUrl, 0),
+        archiveService.getOrCreateFolder(validArcId, 0),
       ).rejects.toThrow();
     });
 
@@ -189,7 +194,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Act & Assert
       await expect(
-        archiveService.getOrCreateFolder(validUrl, deleteInDays),
+        archiveService.getOrCreateFolder(validArcId, deleteInDays),
       ).rejects.toThrow();
 
       // Verify that create was not called
@@ -214,7 +219,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       mockRepository.create.mockResolvedValue([{}]);
 
       // Act
-      await archiveService.getOrCreateFolder(validUrl, deleteInDays);
+      await archiveService.getOrCreateFolder(validArcId, deleteInDays);
 
       // Assert
       expect(mockRepository.create).toHaveBeenCalledWith(
