@@ -3,9 +3,10 @@ import { sql } from "drizzle-orm/sql";
 import type { ArcFolder } from "~/external/models/arc";
 
 const timestamps = {
-  updated_at: timestamp("updated_at"),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  deleted_at: timestamp("deleted_at"),
+  updated_at: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  created_at: timestamp("created_at").defaultNow().notNull()
 };
 
 export const archivedFolders = pgTable("archived_folders", {
@@ -13,6 +14,7 @@ export const archivedFolders = pgTable("archived_folders", {
   arcId: text("arc_id").notNull().unique(),
   folderData: jsonb("folder_data").notNull().$type<ArcFolder>(),
   lastFetchedAt: timestamp("last_fetched_at").defaultNow().notNull(),
+  // TODO: Being used for the auto-delete feature
   deleteAt: timestamp("delete_at"),
   ...timestamps,
 });
