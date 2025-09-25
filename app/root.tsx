@@ -10,7 +10,6 @@ import {
 import { Toaster } from "react-hot-toast";
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
-import { Background } from "./components/background";
 
 export const links: Route.LinksFunction = () => [
   {
@@ -44,7 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <script src="/js/vanta.fog.min.js"></script>
       </head>
       <body className="w-screen h-screen fixed inset-0 overflow-hidden">
-        <Background>{children}</Background>
+        {children}
 
         <ScrollRestoration />
         <Scripts />
