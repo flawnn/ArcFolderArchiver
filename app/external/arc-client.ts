@@ -24,7 +24,6 @@ class ArcClient {
       if (result.success) {
         return result.data;
       } else {
-        debugger;
         console.log(result.error);
         throw new Error("Arc Folder Parsing Issue: " + result.error);
       }

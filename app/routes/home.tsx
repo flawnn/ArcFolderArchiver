@@ -109,7 +109,7 @@ function ArcArchiver() {
   return (
     <BlurContainer>
       {/* Header */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-14">
         <h1
           className="text-6xl font-medium text-white mb-4"
           style={{ letterSpacing: "-1.55px" }}
@@ -122,7 +122,7 @@ function ArcArchiver() {
       </div>
 
       {/* URL Input Section */}
-      <Form method="post" className="mb-12">
+      <Form method="post" >
         <label className="block text-white/90 text-lg font-medium mb-4 tracking-wide">
           Arc Folder URL
         </label>
@@ -156,7 +156,7 @@ function ArcArchiver() {
           type="submit"
           disabled={isSubmitting}
           aria-busy={isSubmitting}
-          className="mt-8 w-full h-16 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium tracking-wide rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-between"
+          className="mt-10 w-full h-16 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium tracking-wide rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-between"
         >
           <div className="flex-1"></div>
           {isSubmitting ? (

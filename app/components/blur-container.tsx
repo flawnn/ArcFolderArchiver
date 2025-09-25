@@ -20,7 +20,7 @@ export function BlurContainer({
           
           className,
         )}
-        style={{ backgroundColor: "rgba(221, 221, 221, 0.64)", ...style }}
+        style={{ backgroundColor: "rgba(221, 221, 221, 0.4)", ...style }}
       >
         {children}
       </div>
