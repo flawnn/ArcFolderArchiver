@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import type { ArchivedFolder } from "~/db/schema";
+import type { ArcFolder } from "~/external/models/arc";
 import { setupHonoServer } from "~/hono";
 import {
   type DELETEFolderRequest,
@@ -17,6 +19,33 @@ describe("ArchiveController", () => {
     // Clean up mocks after each test
   });
 
+  // [AI] Helper function to create mock ArchivedFolder objects
+  const createMockArchivedFolder = (
+    overrides: Partial<ArchivedFolder> = {},
+  ): ArchivedFolder => {
+    const mockFolderData: ArcFolder = {
+      data: {
+        items: [],
+        root: "mock-root-id",
+        rootID: "mock-root-id",
+      },
+      shareID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      author: "Test Author",
+    };
+
+    return {
+      id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      folderData: mockFolderData,
+      lastFetchedAt: new Date(),
+      deleteAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      ...overrides,
+    };
+  };
+
   describe("POST /api/archive (postFolder)", () => {
     const validRequestBody: POSTFolderRequest = {
       arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -25,14 +54,12 @@ describe("ArchiveController", () => {
 
     it("should return folder ID when folder exists in database", async () => {
       // Arrange: Mock service to return existing folder
-      const existingFolder = {
-        id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-        arcUrl: `https://arc.net/folder/${validRequestBody.arcId}`,
-        folderData: { name: "Test Folder", tabs: [] },
-      };
+      const existingFolder = createMockArchivedFolder({
+        arcId: validRequestBody.arcId,
+      });
 
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(existingFolder.id);
+      getOrCreateFolderSpy.mockResolvedValue(existingFolder);
 
       // Act - Using app.request() method (Hono best practice)
       const response = await app.request("/api/archive", {
@@ -55,10 +82,13 @@ describe("ArchiveController", () => {
 
     it("should create new folder when arcId does not exist", async () => {
       // Arrange: Mock service to return new folder
-      const newFolderId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+      const newFolder = createMockArchivedFolder({
+        id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        arcId: validRequestBody.arcId,
+      });
 
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(newFolderId);
+      getOrCreateFolderSpy.mockResolvedValue(newFolder);
 
       // Act
       const response = await app.request("/api/archive", {
@@ -71,7 +101,7 @@ describe("ArchiveController", () => {
       expect(response.status).toBe(200);
       const responseJson = await response.json();
       expect(responseJson).toEqual({
-        internalUUID: newFolderId,
+        internalUUID: newFolder.id,
       });
     });
 
@@ -160,10 +190,13 @@ describe("ArchiveController", () => {
     it("should use default deleteInDays value when not provided", async () => {
       // Arrange
       const requestWithoutDeleteIn = { arcId: validRequestBody.arcId };
+      const mockFolder = createMockArchivedFolder({
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        arcId: validRequestBody.arcId,
+      });
+
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(
-        "550e8400-e29b-41d4-a716-446655440000",
-      );
+      getOrCreateFolderSpy.mockResolvedValue(mockFolder);
 
       // Act
       const response = await app.request("/api/archive", {
@@ -198,7 +231,7 @@ describe("ArchiveController", () => {
 
   describe("POST /api/archive/delete (deleteFolder)", () => {
     const validRequestBody: DELETEFolderRequest = {
-      arcId: "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+      id: "b2c3d4e5-f6a7-8901-bcde-f23456789012",
     };
 
     it("should delete folder successfully when it exists", async () => {
@@ -217,7 +250,7 @@ describe("ArchiveController", () => {
       expect(response.status).toBe(200);
       const responseJson = await response.json();
       expect(responseJson).toBe(true);
-      expect(deleteFolderSpy).toHaveBeenCalledWith(validRequestBody.arcId);
+      expect(deleteFolderSpy).toHaveBeenCalledWith(validRequestBody.id);
     });
 
     it("should return false when folder does not exist", async () => {
@@ -238,14 +271,14 @@ describe("ArchiveController", () => {
       expect(responseJson).toBe(false);
     });
 
-    it("should validate arcId format", async () => {
-      // Test invalid arcId formats
+    it("should validate id format", async () => {
+      // Test invalid id formats
       const invalidIds = [
-        { arcId: "" }, // Empty
-        { arcId: "   " }, // Whitespace
-        { arcId: "x".repeat(51) }, // Too long
-        { arcId: "invalid-uuid" }, // Invalid format
-        { arcId: "123" }, // Too short
+        { id: "" }, // Empty
+        { id: "   " }, // Whitespace
+        { id: "x".repeat(51) }, // Too long
+        { id: "invalid-uuid" }, // Invalid format
+        { id: "123" }, // Too short
       ];
 
       for (const invalidCase of invalidIds) {
@@ -284,10 +317,12 @@ describe("ArchiveController", () => {
   describe("Type-safe testing with testClient", () => {
     it("should work with type-safe client", async () => {
       // This approach provides autocompletion and type safety
+      const mockFolder = createMockArchivedFolder({
+        id: "c3d4e5f6-a7b8-9012-cdef-345678901234",
+      });
+
       const getOrCreateFolderSpy = spyOn(archiveService, "getOrCreateFolder");
-      getOrCreateFolderSpy.mockResolvedValue(
-        "c3d4e5f6-a7b8-9012-cdef-345678901234",
-      );
+      getOrCreateFolderSpy.mockResolvedValue(mockFolder);
 
       // Note: This requires your app to be properly typed for the client to infer routes
       // You would access it like: client.api.archive.$post({ json: validRequestBody })
