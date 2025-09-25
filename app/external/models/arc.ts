@@ -7,7 +7,7 @@ const TabDataSchema = z.object({
   timeLastActiveAt: z.number().optional(),
   savedMuteStatus: z.string().optional(),
   activeTabBeforeCreationID: z.uuid().optional(),
-  savedURL: z.url(),
+  savedURL: z.union([z.url(), z.literal("")]),
   savedTitle: z.string(),
   referrerID: z.uuid().optional(),
 });

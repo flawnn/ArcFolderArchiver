@@ -18,10 +18,13 @@ class ArcClient {
 
       const jsonData = JSON.parse(scriptContent);
 
-      const result = ArcFolderSchema.safeParse(jsonData.props.pageProps);
+      const result = ArcFolderSchema.safeParse(jsonData.props.pageProps, {
+        reportInput: true,
+      });
       if (result.success) {
         return result.data;
       } else {
+        debugger;
         console.log(result.error);
         throw new Error("Arc Folder Parsing Issue: " + result.error);
       }

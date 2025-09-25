@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useRef, useState } from "react";
+import toast from "react-hot-toast";
 import type { FolderItem } from "~/api/models/folder";
 import { Favicon } from "~/components/favicon";
 import { cn } from "~/lib/utils";
@@ -52,8 +53,12 @@ export function FolderItemWidget({
   const isFolder = folder.type === "folder";
 
   const handleClick = () => {
-    if (!isFolder && folder.url) {
-      window.open(folder.url, "_blank", "noopener,noreferrer");
+    if (!isFolder) {
+      if (folder.url) {
+        window.open(folder.url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.error("No URL available for this tab");
+      }
       return;
     }
 
