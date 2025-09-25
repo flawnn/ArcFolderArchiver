@@ -11,6 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/flawn/arc-folder-archiver"
   },
+  "packageManager": "bun@1.2.20",
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "bunx --bun vite",
@@ -27,7 +28,6 @@
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
     "@sentry/bun": "^10.15.0",
-    "@sentry/react": "^10.15.0",
     "@sentry/react-router": "^10.15.0",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
@@ -59,12 +59,12 @@
     "@types/react-dom": "^18.3.1",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.4",
     "happy-dom": "^15.11.7",
-    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20",
     "tailwindcss": "^3.4.16",
+    "postcss": "^8.4.49",
     "tsx": "^4.20.5",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
@@ -73,5 +73,9 @@
   "overrides": {
     "hono": "^4.7.5"
   },
-  "trustedDependencies": ["@biomejs/biome", "esbuild", "workerd"]
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "esbuild",
+    "workerd"
+  ]
 }

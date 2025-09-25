@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/react-router";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+
 Sentry.init({
   dsn: "https://fab902d034de929ced5f4abae6791f3c@o4510081291124736.ingest.de.sentry.io/4510081293287504",
   sendDefaultPii: true,

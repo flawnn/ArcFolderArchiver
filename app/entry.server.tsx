@@ -15,3 +15,7 @@ const handleRequest = Sentry.createSentryHandleRequest({
 export default handleRequest;
 
 export const streamTimeout = 5_000;
+
+export const handleError = Sentry.createSentryHandleError({
+  logErrors: false,
+});

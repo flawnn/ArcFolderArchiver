@@ -5,6 +5,7 @@ import {
 } from "@sentry/react-router";
 import autoprefixer from "autoprefixer";
 import { reactRouterHonoServer } from "react-router-hono-server/dev";
+
 import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -27,10 +28,12 @@ export default defineConfig((config) => {
     },
     plugins: [
       reactRouterHonoServer({ runtime: "bun" }),
+      sentryReactRouter(sentryConfig, config),
       reactRouter(),
       tsconfigPaths(),
-      sentryReactRouter(sentryConfig, config),
     ],
-    build: config.isSsrBuild ? { target: "ES2022" } : {},
+    build: {
+      target: "esnext",
+    },
   };
 });
