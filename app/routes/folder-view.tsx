@@ -101,7 +101,7 @@ export default function Component({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleDeleteFolder = async () => {
+  const handleDeleteFolder = async ({ request }: Route.ActionArgs) => {
     if (!folderId || isDeleting) return;
 
     if (
@@ -115,6 +115,14 @@ export default function Component({ loaderData }: Route.ComponentProps) {
     setIsDeleting(true);
 
     try {
+      // Build absolute URL to API using current request URL as base
+      const apiUrl = new URL("/api/archive", window.location.href);
+
+      if (process.env.NODE_ENV === "production") {
+        // Ensure HTTPS in production to avoid reverse proxy POST->GET conversion
+        apiUrl.protocol = "https:";
+      }
+
       const response = await fetch("/api/archive", {
         method: "DELETE",
         headers: {
