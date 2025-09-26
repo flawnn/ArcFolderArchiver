@@ -110,7 +110,7 @@ function ArcArchiver() {
   const isSubmitting = navigation.state === "submitting";
 
   // Optional Settings
-  const [isJsonOnly, setIsJsonOnly] = useState(false);
+  const [isJsonOnly, setIsJsonOnly] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
