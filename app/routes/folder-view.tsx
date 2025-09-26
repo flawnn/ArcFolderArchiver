@@ -12,6 +12,34 @@ import { NoFolderFound } from "~/components/no-folder-found";
 import { transformArcToSharedFolder } from "~/external/arc-transformer";
 import type { Route } from "./+types/folder-view";
 
+export function meta({ data }: Route.MetaArgs) {
+  const loaderData = data as unknown as {
+    data: SharedFolder | null;
+    notFound: boolean;
+    folderId?: string;
+    shareUrl?: string;
+  };
+
+  if (loaderData.notFound || !loaderData.data) {
+    return [
+      { title: "Folder Not Found - Arc Archiver" },
+      {
+        name: "description",
+        content: "The requested folder could not be found",
+      },
+    ];
+  }
+
+  const { data: folderData } = loaderData;
+  return [
+    { title: `${folderData.title} - by ${folderData.owner}` },
+    {
+      name: "description",
+      content: `View archived Arc folder: ${folderData.title}`,
+    },
+  ];
+}
+
 // provides `loaderData` to the component
 export async function loader({ request, params }: Route.LoaderArgs) {
   const folderId = params.folderid;
