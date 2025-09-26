@@ -97,7 +97,7 @@ export const Background = ({ children }: { children: React.ReactNode }) => {
       </div>
       
       <div className="absolute bottom-6 left-6 z-20">
-        <FooterBadge repoUrl="https://github.com/flawn/ArcFolderArchiver" />
+        <FooterBadge repoUrl="https://github.com/flawnn/ArcFolderArchiver" />
       </div>
     </div>
   );
