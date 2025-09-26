@@ -40,7 +40,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   // Build absolute URL to API using current request URL as base
-  const apiUrl = new URL("/api/archive/", request.url);
+  const apiUrl = new URL("/api/archive", request.url);
+
+  // Ensure HTTPS in production to avoid reverse proxy POST->GET conversion
+  if (process.env.NODE_ENV === "production") {
+    apiUrl.protocol = "https:";
+  }
 
   try {
     const res = await fetch(apiUrl, {
