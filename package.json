@@ -16,6 +16,8 @@
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "bunx --bun vite",
     "start": "cross-env NODE_ENV=production bun ./build/server/index.js",
+    "start:docker": "bun run db:migrateprod && bunx cross-env NODE_ENV=production bun ./build/server/index.js",
+    "db:migrateprod": "NODE_ENV=production bun drizzle/migrate.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",

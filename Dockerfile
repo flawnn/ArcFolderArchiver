@@ -21,5 +21,5 @@ FROM dependencies-env
 COPY ./package.json bun.lock /arcarchiver/
 COPY --from=production-dependencies-env /arcarchiver/node_modules /arcarchiver/node_modules
 COPY --from=build-env /arcarchiver/build /arcarchiver/build
-WORKDIR /app
-CMD ["bun", "run", "start"]
+WORKDIR /arcarchiver
+CMD ["bun", "run", "start:docker"]

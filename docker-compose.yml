@@ -11,7 +11,6 @@ services:
       POSTGRES_DB: arcarchiver
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./drizzle:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -30,13 +29,10 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://arcarchiver:arcarchiver_password@postgres:5432/arcarchiver
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      # [AI] Mount logs directory for easier debugging if needed
-      - ./logs:/app/logs
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
       interval: 30s
