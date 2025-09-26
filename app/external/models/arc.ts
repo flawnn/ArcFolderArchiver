@@ -22,7 +22,7 @@ const ListDataSchema = z.object({});
  * Represents a split view, containing multiple items.
  */
 const SplitViewDataSchema = z.object({
-  focusItemID: z.uuid(),
+  focusItemID: z.uuid().nullable(),
   layoutOrientation: z.enum(["horizontal", "vertical"]),
   timeLastActiveAt: z.number(),
   itemWidthFactors: z.array(z.union([z.string(), z.number()])),
