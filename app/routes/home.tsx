@@ -40,7 +40,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   // Build absolute URL to API using current request URL as base
-  const apiUrl = new URL("/api/archive", request.url);
+  const apiUrl = new URL("/api/archive/", request.url);
 
   try {
     const res = await fetch(apiUrl, {
