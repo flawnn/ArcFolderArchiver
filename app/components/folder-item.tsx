@@ -51,9 +51,10 @@ export function FolderItemWidget({
 
   const hasChildren = folder.children && folder.children.length > 0;
   const isFolder = folder.type === "folder";
+  const isSplit = folder.type === "split";
 
   const handleClick = () => {
-    if (!isFolder) {
+    if (folder.type === "tab") {
       if (folder.url) {
         window.open(folder.url, "_blank", "noopener,noreferrer");
       } else {
@@ -79,7 +80,22 @@ export function FolderItemWidget({
     setMousePosition({ x, y });
   };
 
-  const iconColorClass = isFolder ? "text-indigo-300" : "text-sky-300";
+  const iconColorClass =
+    isFolder || isSplit ? "text-indigo-300" : "text-sky-300";
+
+  if (isSplit && hasChildren) {
+    return (
+      <div className={cn("w-full")}>
+        <div className={cn("w-full flex items-stretch gap-2 md:gap-3")}>
+          {folder.children!.map((child, index) => (
+            <div key={child.id} className={cn("flex-1 min-w-0")}>
+              <FolderItemWidget folder={child} onClick={onClick} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -115,9 +131,9 @@ export function FolderItemWidget({
         )}
 
         {/* Label area with favicon and single-line truncated name */}
-        <div className="relative z-10 flex-1 min-w-0 max-w-[72%] sm:max-w-[76%] md:max-w-[80%]">
+        <div className="relative z-10 flex-1 min-w-0 max-w-[80%] md:max-w-[90%]">
           <div className="flex items-center gap-2 min-w-0">
-            {!isFolder && folder.url ? (
+            {folder.type === "tab" && folder.url ? (
               <div className="flex-shrink-0">
                 <Favicon url={folder.url} size={16} />
               </div>

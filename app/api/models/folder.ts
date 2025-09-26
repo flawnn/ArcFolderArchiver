@@ -1,7 +1,7 @@
 export interface FolderItem {
   id: string;
   name: string;
-  type: "tab" | "folder";
+  type: "tab" | "folder" | "split";
   icon?: string;
   children?: FolderItem[];
   url?: string | null;

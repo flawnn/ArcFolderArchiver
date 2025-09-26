@@ -19,6 +19,15 @@ export function transformArcToSharedFolder(arcFolder: ArcFolder): {
   } else if (rootID) {
     rootItems.push(rootID);
   }
+  // Include explicit rootItems if present on the payload
+  if (
+    Array.isArray((data as any).rootItems) &&
+    (data as any).rootItems.length > 0
+  ) {
+    for (const id of (data as any).rootItems as string[]) {
+      if (!rootItems.includes(id)) rootItems.push(id);
+    }
+  }
 
   const folders: FolderItem[] = rootItems
     .map((id) => transformArcItemToFolderItem(id, itemsMap))
@@ -61,7 +70,49 @@ function transformArcItemToFolderItem(
 
   const isTab = "tab" in item.data;
   const isFolder = "list" in item.data;
-  if (!isTab && !isFolder) return null;
+  const isSplit = "splitView" in item.data;
+  if (!isTab && !isFolder && !isSplit) return null;
+
+  if (isSplit) {
+    const split = (item.data as any).splitView;
+
+    // Prefer the actual childrenIds for the split container
+    const candidateIds: string[] = Array.isArray((item as any).childrenIds)
+      ? (item as any).childrenIds
+      : [];
+
+    // If itemWidthFactors is present, use any string entries as ordering hints
+    const factorIds: string[] = Array.isArray(split?.itemWidthFactors)
+      ? (split.itemWidthFactors as unknown[]).filter(
+          (v): v is string => typeof v === "string",
+        )
+      : [];
+
+    let orderedChildIds: string[] = [];
+    if (candidateIds.length > 0 && factorIds.length > 0) {
+      const fromFactors = factorIds.filter((id) => candidateIds.includes(id));
+      const remaining = candidateIds.filter((id) => !factorIds.includes(id));
+      orderedChildIds = [...fromFactors, ...remaining];
+    } else if (candidateIds.length > 0) {
+      orderedChildIds = candidateIds;
+    } else {
+      // Fallback: if no childrenIds, but factors include ids, use them
+      orderedChildIds = factorIds;
+    }
+
+    const splitChildren = orderedChildIds
+      .map((childId) => transformArcItemToFolderItem(childId, itemsMap))
+      .filter((child): child is FolderItem => child !== null);
+
+    const splitItem: FolderItem = {
+      id: item.id,
+      name: item.title || "Split View",
+      type: "split",
+      children: splitChildren,
+    };
+
+    return splitItem;
+  }
 
   const url = isTab
     ? ((item.data as any).tab?.savedURL ?? undefined)
