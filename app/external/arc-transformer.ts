@@ -30,10 +30,22 @@ export function transformArcToSharedFolder(arcFolder: ArcFolder): {
     itemsMap.get(rootItems[0])?.title ||
     "Archived Folder";
 
+  // Flatten structure if there's only one top-level folder with the same name as the overall folder
+  let finalFolders = folders;
+  if (
+    folders.length === 1 &&
+    folders[0].type === "folder" &&
+    folders[0].name === title &&
+    folders[0].children &&
+    folders[0].children.length > 0
+  ) {
+    finalFolders = folders[0].children;
+  }
+
   const shared: SharedFolder = {
     title,
     owner: author,
-    folders,
+    folders: finalFolders,
   };
 
   const shareUrl = `https://arc.net/folder/${shareID}`;
