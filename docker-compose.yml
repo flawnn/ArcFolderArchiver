@@ -28,6 +28,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://arcarchiver:arcarchiver_password@postgres:5432/arcarchiver
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     ports:
       - "3001:3000"
     depends_on:
