@@ -47,7 +47,7 @@ const ArcItemDataSchema = z.union([
 export const ArcItemSchema = z
   .object({
     id: z.uuid(),
-    parentID: z.uuid(),
+    parentID: z.string(),
     childrenIds: z.array(z.uuid()),
     title: z.string().nullable(),
     createdAt: z.number(),
