@@ -2,9 +2,11 @@ import { describe, expect, it, mock } from "bun:test";
 import { createMockArchivedFolder } from "~/lib/utils";
 import type { ArcFolder } from "../../external/models/arc";
 
-// Mock the dependencies at module level for easy spying
+// Mock the external client at module level; inject repository via constructor
+// so repository integration tests are not affected by mock.module leakage.
 mock.module("../../external/arc-client", () => ({
   arcClient: {
+    extractShareData: mock(),
     extractFolderData: mock(),
   },
 }));
@@ -16,16 +18,12 @@ const mockRepository = {
   create: mock(),
 };
 
-mock.module("./archive.repository", () => ({
-  ArchiveRepository: mock(() => mockRepository),
-}));
-
 // Import AFTER mocking
 const { arcClient } = await import("../../external/arc-client");
 const { ArchiveService } = await import("./archive.service");
 
 describe("ArchiveService - Mocked Dependencies", () => {
-  const archiveService = new ArchiveService();
+  const archiveService = new ArchiveService(mockRepository as never);
 
   describe("getOrCreateFolder", () => {
     const validArcId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
@@ -50,7 +48,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       expect(mockRepository.findByArcId).toHaveBeenCalledWith(
         "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       ); // Extract ID from URL
-      expect(arcClient.extractFolderData).not.toHaveBeenCalled(); // Should not fetch from external
+      expect(arcClient.extractShareData).not.toHaveBeenCalled(); // Should not fetch from external
       expect(mockRepository.create).not.toHaveBeenCalled(); // Should not create new
 
       expect(result).toEqual(existingFolder);
@@ -97,7 +95,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       ];
 
       mockRepository.findByArcId.mockResolvedValue(null); // No existing folder
-      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (arcClient.extractShareData as any).mockResolvedValue(extractedData);
       mockRepository.create.mockResolvedValue(newFolder);
 
       // Act
@@ -110,7 +108,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       expect(mockRepository.findByArcId).toHaveBeenCalledWith(
         "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       );
-      expect(arcClient.extractFolderData).toHaveBeenCalledWith(validArcId);
+      expect(arcClient.extractShareData).toHaveBeenCalledWith(validArcId, undefined);
       expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           arcId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -132,7 +130,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Arrange: Mock repository returns null, ArcClient throws error
       mockRepository.findByArcId.mockResolvedValue(null);
-      (arcClient.extractFolderData as any).mockRejectedValue(
+      (arcClient.extractShareData as any).mockRejectedValue(
         new Error("Failed to fetch Arc data"),
       );
 
@@ -158,7 +156,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       };
 
       mockRepository.findByArcId.mockResolvedValue(null);
-      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (arcClient.extractShareData as any).mockResolvedValue(extractedData);
       mockRepository.create.mockRejectedValue(new Error("Database error"));
 
       // Act & Assert
@@ -190,7 +188,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
 
       // Arrange: ArcClient returns null (e.g., when folder is not found or malformed)
       mockRepository.findByArcId.mockResolvedValue(null);
-      (arcClient.extractFolderData as any).mockResolvedValue(null);
+      (arcClient.extractShareData as any).mockResolvedValue(null);
 
       // Act & Assert
       await expect(
@@ -215,7 +213,7 @@ describe("ArchiveService - Mocked Dependencies", () => {
       const currentTime = Date.now();
 
       mockRepository.findByArcId.mockResolvedValue(null);
-      (arcClient.extractFolderData as any).mockResolvedValue(extractedData);
+      (arcClient.extractShareData as any).mockResolvedValue(extractedData);
       mockRepository.create.mockResolvedValue([{}]);
 
       // Act

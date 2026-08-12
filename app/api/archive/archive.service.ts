@@ -12,11 +12,13 @@ export class ArchiveService {
   /**
    * This function is for getting an existing folder's ID, or fetching a unknown folder, and then returning its id.
    *
-   * It is mainly being used for the user flow of submitting a new folder they want to archive, as when the user is being redirected to the folder-view, we fetch folder data via our internal methods directly.
+   * It is mainly being used for the user flow of submitting a new share URL to archive.
+   * After submission, the user is redirected to the share view, where we load data from our database.
    */
   async getOrCreateFolder(
     arcId: string,
     deleteInDays: number,
+    shareKind?: "folder" | "space",
   ): Promise<ArchivedFolder | null> {
     if (deleteInDays <= 0) {
       throw new Error("Invalid input parameters - Check the deleteInDays");
@@ -30,7 +32,7 @@ export class ArchiveService {
     }
 
     // 3. If not, fetch the folder data from the external Arc client
-    const folderData = await this.fetchFolder(arcId);
+    const folderData = await this.fetchFolder(arcId, shareKind);
 
     // 4. Calculate the deletion date
     const deleteAt = new Date();
@@ -46,8 +48,11 @@ export class ArchiveService {
     return newFolder[0] ?? null;
   }
 
-  async fetchFolder(arcId: string): Promise<ArcFolder> {
-    const folderData = await arcClient.extractFolderData(arcId);
+  async fetchFolder(
+    arcId: string,
+    shareKind?: "folder" | "space",
+  ): Promise<ArcFolder> {
+    const folderData = await arcClient.extractShareData(arcId, shareKind);
 
     if (!folderData) {
       throw new Error("Failed to fetch folder data from Arc.");

@@ -10,5 +10,8 @@ export interface FolderItem {
 export interface SharedFolder {
   title: string;
   owner: string;
+  shareType?: "folder" | "space";
+  emoji?: string;
   folders: FolderItem[];
+  openTabs?: FolderItem[];
 }

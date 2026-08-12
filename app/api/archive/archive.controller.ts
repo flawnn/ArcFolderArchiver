@@ -38,13 +38,17 @@ class ArchiveController {
     // If jsonOnly, just fetch & the fetched folder
     // (Yes, it might be that the folder already exists in the database, but as this is just a JSON Request, we will not write extra logic"
     if (body.jsonOnly) {
-      const fetchedFolder = await this._archiveService.fetchFolder(body.arcId);
+      const fetchedFolder = await this._archiveService.fetchFolder(
+        body.arcId,
+        body.shareKind,
+      );
       return c.json(transformArcToSharedFolder(fetchedFolder));
     }
 
     const folder = await this._archiveService.getOrCreateFolder(
       body.arcId,
       body.deleteInDays,
+      body.shareKind,
     );
 
     return c.json({

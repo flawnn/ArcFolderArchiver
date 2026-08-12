@@ -30,24 +30,45 @@ const SplitViewDataSchema = z.object({
 });
 
 /**
+ * Space section container (pinned / unpinned roots).
+ */
+const ItemContainerDataSchema = z.object({
+  itemContainer: z.object({
+    containerType: z.record(z.string(), z.unknown()),
+  }),
+});
+
+/**
+ * Embedded shared Arc object (e.g. linked folder URL inside a space).
+ */
+const SharedObjectDataSchema = z.object({
+  sharedObject: z
+    .object({
+      slug: z.string().optional(),
+      sidebarData: z.record(z.string(), z.unknown()).optional(),
+    })
+    .loose(),
+});
+
+/**
  * A union of possible data types for an Arc item.
- * It can be a tab, a list (folder), or a split view.
  */
 const ArcItemDataSchema = z.union([
   z.object({ tab: TabDataSchema }),
   z.object({ list: ListDataSchema }),
   z.object({ splitView: SplitViewDataSchema }),
+  ItemContainerDataSchema,
+  SharedObjectDataSchema,
 ]);
 
 /**
  * Represents a generic item in Arc, which could be a tab, a folder (list),
- * or a split view. We omit `originatingDevice` and `isUnread` as they are
- * not needed for our use case.
+ * split view, space container, or embedded shared object.
  */
 export const ArcItemSchema = z
   .object({
     id: z.uuid(),
-    parentID: z.string(),
+    parentID: z.string().nullable(),
     childrenIds: z.array(z.uuid()),
     title: z.string().nullable(),
     createdAt: z.number(),
@@ -57,24 +78,55 @@ export const ArcItemSchema = z
   })
   .omit({ originatingDevice: true, isUnread: true });
 
+const ArcSpaceSchema = z
+  .object({
+    id: z.uuid(),
+    title: z.string(),
+    containerIDs: z.array(z.string()).optional(),
+    newContainerIDs: z.array(z.unknown()).optional(),
+    customInfo: z
+      .object({
+        iconType: z
+          .object({
+            emoji_v2: z.string().optional(),
+            emoji: z.number().optional(),
+          })
+          .loose()
+          .optional(),
+      })
+      .loose()
+      .optional(),
+    profile: z.unknown().optional(),
+  })
+  .loose();
+
 /**
- * Represents a shared Arc Folder, containing all the items and metadata.
- * The structure of `data` can vary based on what is being shared.
- * It can be a single folder (with a single `root` and `rootID`) or a collection
- * of items (with `root` and `rootItems` as arrays of UUIDs).
+ * Represents a shared Arc folder or space, containing items and metadata.
+ * Folder shares use `root` / `rootID`; space shares use `space`.
  */
 export const ArcFolderSchema = z.object({
   data: z.object({
     items: z.array(ArcItemSchema).default([]),
     rootID: z.uuid().nullable().optional(),
-    /** The root item(s) of the shared folder. Can be a single UUID or an array of UUIDs. */
-    root: z.union([z.uuid().nullable(), z.array(z.uuid())]),
+    /** The root item(s) of a shared folder. Absent on space shares. */
+    root: z
+      .union([z.uuid().nullable(), z.array(z.uuid())])
+      .optional(),
     /** The root items, typically used when sharing a collection of items. */
     rootItems: z.array(z.uuid()).optional(),
+    /** Present when the share is an Arc space rather than a single folder. */
+    space: ArcSpaceSchema.optional(),
   }),
   shareID: z.uuid(),
   author: z.string(),
+  path: z.string().optional(),
 });
 
 export type ArcFolder = z.infer<typeof ArcFolderSchema>;
 export type ArcItem = z.infer<typeof ArcItemSchema>;
+export type ArcSpace = z.infer<typeof ArcSpaceSchema>;
+
+export const isArcSpaceShare = (
+  arcShare: ArcFolder,
+): arcShare is ArcFolder & { data: { space: ArcSpace } } =>
+  arcShare.data.space != null;

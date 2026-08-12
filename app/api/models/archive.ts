@@ -5,6 +5,7 @@ const POSTFolderRequestSchema = z.object({
   deleteInDays: z.int().nonnegative().default(0),
   arcId: z.uuid(),
   jsonOnly: z.boolean().optional().default(false),
+  shareKind: z.enum(["folder", "space"]).optional(),
 });
 
 const POSTFolderResponseSchema = z.object({
