@@ -52,6 +52,7 @@ describe("ArchiveController", () => {
       expect(getOrCreateFolderSpy).toHaveBeenCalledWith(
         validRequestBody.arcId,
         validRequestBody.deleteInDays,
+        undefined,
       );
     });
 
@@ -184,6 +185,7 @@ describe("ArchiveController", () => {
       expect(getOrCreateFolderSpy).toHaveBeenCalledWith(
         validRequestBody.arcId,
         0, // Default value from schema
+        undefined,
       );
     });
 
