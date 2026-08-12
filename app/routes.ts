@@ -8,6 +8,7 @@ import {
 export default [
   layout("routes/layout.tsx", [
     index("routes/home.tsx"),
-    route("folder/:folderid", "routes/folder-view.tsx"),
+    route("share/:shareid", "routes/share-view.tsx"),
+    route("folder/:folderid", "routes/share-legacy-redirect.tsx"),
   ]),
 ] satisfies RouteConfig;

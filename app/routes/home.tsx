@@ -24,17 +24,16 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (!url) {
     return Response.json(
-      { message: "Please enter an Arc folder URL." },
+      { message: "Please enter an Arc share URL." },
       { status: 400 },
     );
   }
 
-  // Extract last non-empty path segment
-  const arcId = extractArcId();
+  const { arcId, shareKind } = extractArcShareFromUrl(url);
 
   if (!arcId) {
     return Response.json(
-      { message: "The provided URL does not contain a valid Arc folder UUID." },
+      { message: "The provided URL does not contain a valid Arc share UUID." },
       { status: 400 },
     );
   }
@@ -57,6 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
         arcId,
         deleteInDays: 30,
         jsonOnly,
+        shareKind,
       } satisfies POSTFolderRequest),
     });
 
@@ -64,7 +64,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     if (!res.ok) {
       const message =
-        (data && (data as any).message) || "Failed to archive folder.";
+        (data && (data as any).message) || "Failed to archive share.";
       return Response.json({ message }, { status: res.status });
     }
 
@@ -81,7 +81,7 @@ export async function action({ request }: Route.ActionArgs) {
       );
     }
 
-    const redirectUrl = new URL(`/folder/${internalUUID}`, request.url);
+    const redirectUrl = new URL(`/share/${internalUUID}`, request.url);
     return Response.redirect(redirectUrl);
   } catch (err) {
     return Response.json(
@@ -90,16 +90,29 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  function extractArcId(): string | null {
-    const segments = url.split("/").filter(Boolean);
+  function extractArcShareFromUrl(input: string): {
+    arcId: string | null;
+    shareKind?: "folder" | "space";
+  } {
+    const segments = input.split("/").filter(Boolean);
     const lastSegment = segments[segments.length - 1] ?? "";
+    const shareSegment = segments[segments.length - 2]?.toLowerCase();
 
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    if (uuidRegex.test(lastSegment)) {
-      return lastSegment;
-    } else return null;
+    if (!uuidRegex.test(lastSegment)) {
+      return { arcId: null };
+    }
+
+    const shareKind =
+      shareSegment === "space"
+        ? "space"
+        : shareSegment === "folder"
+          ? "folder"
+          : undefined;
+
+    return { arcId: lastSegment, shareKind };
   }
 }
 
@@ -154,14 +167,14 @@ function ArcArchiver() {
           Arc Archiver
         </h1>
         <p className="text-xl text-white/85 font-light tracking-wide">
-          Flatten or export your precious Arc folders
+          Flatten or export your precious Arc folders and spaces
         </p>
       </div>
 
       {/* URL Input Section */}
       <Form method="post">
         <label className="block text-white/90 text-lg font-medium mb-4 tracking-wide">
-          Arc Folder URL
+          Arc Share URL
         </label>
         <div className="flex items-center gap-4">
           <div className="flex-1">
@@ -170,7 +183,7 @@ function ArcArchiver() {
               name="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://arc.net/folder/..."
+              placeholder="https://arc.net/{folder, space}/..."
               className="h-14 text-lg font-normal bg-white/90 border-0 rounded-2xl px-6 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-white/50"
               required
             />
@@ -240,7 +253,7 @@ function ArcArchiver() {
               Processing...
             </span>
           ) : (
-            <span>{isJsonOnly ? "Download JSON" : "Archive Folder"}</span>
+            <span>{isJsonOnly ? "Download JSON" : "Archive Share"}</span>
           )}
           <div className="flex-1 flex justify-end">
             {isSubmitting ? null : <ChevronRight className="h-6 w-6" />}
