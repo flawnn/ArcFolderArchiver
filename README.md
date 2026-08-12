@@ -1,4 +1,4 @@
-# Arc Folder Archive
+# Arc Folder Archiver
 
 A simple tool to allow you to export your precious Arc Folders. You can either choose to export them directly as JSON, or to host them on the application and have a "flattened" version of your .
 
